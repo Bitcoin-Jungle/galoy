@@ -4,6 +4,7 @@ import moment from "moment"
 import { baseLogger } from "@services/logger"
 import { PriceHistory } from "./schema"
 import { SATS_PER_BTC } from "@config/app"
+import https from 'https'
 
 const pair = "BTC/USD"
 const exchange = "bitfinex"
@@ -49,6 +50,27 @@ export const updatePriceHistory = async (init = false): Promise<boolean | Error>
     baseLogger.info({ err }, "can't detect last price")
   }
 
+  let crcExcahnge: number = 0;
+
+  https.get('https://api.exchangeratesapi.io/v1/latest?access_key=f972721cec74736fd7d7caf42ecf5d18&base=USD&symbols=CRC', (resp) => {
+    let data = '';
+
+    // A chunk of data has been received.
+    resp.on('data', (chunk) => {
+      data += chunk;
+    });
+
+    // The whole response has been received. Print out the result.
+    resp.on('end', () => {
+      const json: any = JSON.parse(data)
+      if(json.success) {
+        crcExcahnge = json.rates.CRC
+      }
+    });
+  }).on("error", (err) => {
+    console.log("Error: " + err.message);
+  });
+
   while (currDate < endDate) {
     baseLogger.debug({ currDate, endDate }, "loop to fetch data from exchange")
     const ohlcv = await getFromExchange({ since: currDate, limit, init })
@@ -61,7 +83,7 @@ export const updatePriceHistory = async (init = false): Promise<boolean | Error>
         }
 
         baseLogger.debug({ value0: value[0] }, "adding entry to our price database")
-        doc.pair.exchange.price.push({ _id: value[0], o: value[1] / SATS_PER_BTC })
+        doc.pair.exchange.price.push({ _id: value[0], o: ( value[1] * crcExcahnge ) / SATS_PER_BTC })
       }
 
       await doc.save()
