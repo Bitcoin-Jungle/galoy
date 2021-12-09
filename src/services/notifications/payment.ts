@@ -1,12 +1,12 @@
 import { sendNotification } from "./notification"
 
 export const getTitle = {
-  "paid-invoice": ({ usd, amount }) => `+$${usd} | ${amount} sats`,
-  "onchain_receipt": ({ usd, amount }) => `+$${usd} | ${amount} sats`,
-  "onchain_receipt_pending": ({ usd, amount }) => `pending +$${usd} | ${amount} sats`,
+  "paid-invoice": ({ usd, amount }) => `+₡${usd} | ${amount} sats`,
+  "onchain_receipt": ({ usd, amount }) => `+₡${usd} | ${amount} sats`,
+  "onchain_receipt_pending": ({ usd, amount }) => `pending +₡${usd} | ${amount} sats`,
   "onchain_payment": ({ amount }) => `Sent onchain payment of ${amount} sats confirmed`,
-  "intra_ledger_receipt": ({ usd, amount }) => `+$${usd} | ${amount} sats`,
-  "intra_ledger_payment": ({ usd, amount }) => `Sent payment of $${usd} | ${amount} sats`,
+  "intra_ledger_receipt": ({ usd, amount }) => `+₡${usd} | ${amount} sats`,
+  "intra_ledger_payment": ({ usd, amount }) => `Sent payment of ₡${usd} | ${amount} sats`,
 }
 
 export const getTitleNoUsd = {
@@ -30,7 +30,7 @@ export const transactionNotification = async ({
   let title = getTitleNoUsd[type]({ amount })
 
   if (usdPerSat) {
-    const usd = (amount * usdPerSat).toFixed(2)
+    const usd = (amount * usdPerSat).toFixed(2).replace('.', ',')
     title = getTitle[type]({ usd, amount })
   }
 
