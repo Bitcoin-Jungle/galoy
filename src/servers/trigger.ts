@@ -40,7 +40,7 @@ export const uploadBackup = async ({ backup, pubkey }) => {
   logger.debug({ backup }, "updating scb on gcs")
   try {
     const storage = new Storage({ keyFilename: process.env.GCS_APPLICATION_CREDENTIALS })
-    const bucket = storage.bucket("lnd-static-channel-backups")
+    const bucket = storage.bucket("galoy-pura-vida-lnd-static-channel-backups")
     const file = bucket.file(`${filename}`)
     await file.save(backup)
     logger.info({ backup }, "scb backed up on gcs successfully")
