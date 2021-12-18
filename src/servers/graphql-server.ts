@@ -150,7 +150,7 @@ export const startApolloServer = async ({
       // @ts-expect-error: TODO
       const apiSecret = context.req?.apiSecret ?? null
 
-      const ips = context.req?.headers["x-real-ip"]
+      const ips = context.req?.headers["x-real-ip"] || context.req?.headers['x-forwarded-for']
       const body = context.req?.body ?? null
 
       return sessionContext({ token, apiKey, apiSecret, ips, body })
