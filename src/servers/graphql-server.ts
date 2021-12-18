@@ -62,6 +62,11 @@ const sessionContext = ({ token, ips, body, apiKey, apiSecret }) => {
   if (ips && Array.isArray(ips) && ips.length) {
     ip = ips[0]
   } else if (typeof ips === "string") {
+    
+    if(ips.indexOf(',') !== -1) {
+      ips = ips.split(',')[0]
+    }
+
     ip = ips
   }
 
