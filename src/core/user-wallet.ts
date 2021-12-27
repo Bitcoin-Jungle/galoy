@@ -269,9 +269,9 @@ export abstract class UserWallet {
     if (balanceSats instanceof Error) throw balanceSats
 
     // Add commas to balancesats
-    const balanceSatsPrettified = balanceSats.toLocaleString("en")
+    const balanceSatsPrettified = balanceSats.toLocaleString("es")
     // Round balanceusd to 2 decimal places and add commas
-    const balanceUsd = UserWallet.satsToUsd(balanceSats).toLocaleString("en", {
+    const balanceUsd = UserWallet.satsToUsd(balanceSats).toLocaleString("es", {
       maximumFractionDigits: 2,
     })
 
@@ -281,7 +281,7 @@ export abstract class UserWallet {
     )
     await sendNotification({
       user: this.user,
-      title: `Your balance is $${balanceUsd} (${balanceSatsPrettified} sats)`,
+      title: `Your balance is ₡${balanceUsd} (${balanceSatsPrettified} sats)`,
       logger: this.logger,
     })
   }

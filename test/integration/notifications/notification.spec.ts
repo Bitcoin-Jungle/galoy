@@ -27,18 +27,19 @@ describe("notification", () => {
     it("sends daily balance to active users", async () => {
       await sendBalanceToUsers()
       const numActiveUsers = (await User.getActiveUsers()).length
+
       expect(sendNotification.mock.calls.length).toBe(numActiveUsers)
       for (const [call] of sendNotification.mock.calls) {
         const balance = await ledger.getAccountBalance(call.user.accountPath)
 
-        const expectedUsdBalance = (price * balance).toLocaleString("en", {
+        const expectedUsdBalance = (price * balance).toLocaleString("es", {
           maximumFractionDigits: 2,
         })
-        const expectedSatsBalance = balance.toLocaleString("en", {
+        const expectedSatsBalance = balance.toLocaleString("es", {
           maximumFractionDigits: 2,
         })
         expect(call.title).toBe(
-          `Your balance is $${expectedUsdBalance} (${expectedSatsBalance} ${balance} sats)`,
+          `Your balance is ₡${expectedUsdBalance} (${expectedSatsBalance} sats)`,
         )
       }
     })
