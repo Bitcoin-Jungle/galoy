@@ -92,6 +92,8 @@ const UserSchema = new Schema<UserType>({
         city: String,
         //using Type instead of type due to its special status in mongoose
         Type: String,
+        asn: String,
+        proxy: String,
         firstConnection: {
           type: Date,
           default: Date.now,

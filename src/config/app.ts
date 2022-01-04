@@ -255,6 +255,8 @@ export const getIpConfig = (config = yamlConfig): IpConfig => ({
   proxyCheckingEnabled: config.ipRecording?.proxyChecking?.enabled,
 })
 
+export const getBlacklistedASNs = (): string => yamlConfig?.blacklistedASNs
+
 export const getApolloConfig = (config = yamlConfig): ApolloConfig => config.apollo
 export const getTwoFAConfig = (config = yamlConfig): TwoFAConfig => config.twoFA
 

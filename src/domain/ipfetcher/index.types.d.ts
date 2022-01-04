@@ -10,6 +10,8 @@ type IPInfo = {
   region: string
   city: string
   type: string
+  asn: string
+  proxy: string
   status: string
 }
 

@@ -3,10 +3,14 @@ import { User } from "@services/mongoose/schema"
 import { CustomError } from "../error"
 import { redlock } from "../lock"
 import { OnChainMixin } from "../on-chain"
-import { onboardingEarn } from "@config/app"
+import { onboardingEarn, getBlacklistedASNs } from "@config/app"
 import { UserWallet } from "../user-wallet"
 import { getWalletFromRole } from "../wallet-factory"
 import { addInvoice, lnInvoicePaymentSend } from "@app/wallets"
+import { UsersIpRepository } from "@services/mongoose/users-ips"
+import { RepositoryError } from "@domain/errors"
+
+const usersIp = UsersIpRepository()
 
 /**
  * this represents a user wallet
@@ -28,6 +32,44 @@ export class LightningUserWallet extends OnChainMixin(UserWallet) {
           metadata: undefined,
         },
       )
+    }
+
+    const userIP = await usersIp.findById(this.user?.id)
+
+    if (!(userIP instanceof RepositoryError)) {
+      const lastIP = userIP.lastIPs.sort(
+        (a, b) => b.lastConnection.getTime() - a.lastConnection.getTime(),
+      )[0]
+
+      if (lastIP && lastIP.asn) {
+        const blacklistedASNs = getBlacklistedASNs()
+
+        if (blacklistedASNs && blacklistedASNs.indexOf(lastIP.asn) != -1) {
+          throw new CustomError(
+            "reward can only be given on non blacklisted ASNs",
+            "ASN_REWARD_RESTRICTED",
+            {
+              forwardToClient: true,
+              logger: this.logger,
+              level: "warn",
+              metadata: undefined,
+            },
+          )
+        }
+      }
+
+      if(lastIP && lastIP.proxy && lastIP.proxy == 'yes') {
+        throw new CustomError(
+          "reward can only be given on non VPN/proxy connections",
+          "VPN_REWARD_RESTRICTED",
+          {
+            forwardToClient: true,
+            logger: this.logger,
+            level: "warn",
+            metadata: undefined,
+          },
+        )
+      }
     }
 
     const lightningFundingWallet = await getWalletFromRole({
