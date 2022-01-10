@@ -256,6 +256,7 @@ export const getIpConfig = (config = yamlConfig): IpConfig => ({
 })
 
 export const getBlacklistedASNs = (): string => yamlConfig?.blacklistedASNs
+export const getWhitelistedCountries = (): string => yamlConfig?.whitelistedCountries
 
 export const getApolloConfig = (config = yamlConfig): ApolloConfig => config.apollo
 export const getTwoFAConfig = (config = yamlConfig): TwoFAConfig => config.twoFA

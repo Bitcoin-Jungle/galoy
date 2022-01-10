@@ -3,7 +3,7 @@ import { User } from "@services/mongoose/schema"
 import { CustomError } from "../error"
 import { redlock } from "../lock"
 import { OnChainMixin } from "../on-chain"
-import { onboardingEarn, getBlacklistedASNs } from "@config/app"
+import { onboardingEarn, getBlacklistedASNs, getWhitelistedCountries } from "@config/app"
 import { UserWallet } from "../user-wallet"
 import { getWalletFromRole } from "../wallet-factory"
 import { addInvoice, lnInvoicePaymentSend } from "@app/wallets"
@@ -69,6 +69,23 @@ export class LightningUserWallet extends OnChainMixin(UserWallet) {
             metadata: undefined,
           },
         )
+      }
+
+      if (lastIP && lastIP.country) {
+        const whitelistedCountries = getWhitelistedCountries()
+
+        if (whitelistedCountries && whitelistedCountries.indexOf(lastIP.country) < 0) {
+          throw new CustomError(
+            "reward can only be given on non blacklisted countries",
+            "COUNTRY_REWARD_RESTRICTED",
+            {
+              forwardToClient: true,
+              logger: this.logger,
+              level: "warn",
+              metadata: undefined,
+            },
+          )
+        }
       }
     }
 
