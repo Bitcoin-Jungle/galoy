@@ -4,8 +4,8 @@ name: "Bitcoin Jungle"
 funder: "FunderWallet"
 
 buildVersion:
-  minBuildNumber: 182
-  lastBuildNumber: 269
+  minBuildNumber: 303
+  lastBuildNumber: 303
 
 hedging:
   LOW_BOUND_RATIO_SHORTING: 0.95
