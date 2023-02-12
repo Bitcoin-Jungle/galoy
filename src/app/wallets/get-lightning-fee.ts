@@ -81,6 +81,9 @@ const feeProbe = async ({
     return toSats(0)
   }
 
+  const maxFee = LnFeeCalculator().max(paymentAmount)
+  if(decodedInvoice.routeHints.length) return toSats(maxFee)
+
   const key = CachedRouteLookupKeyFactory().create({
     paymentHash,
     milliSats: toMilliSatsFromNumber(paymentAmount * 1000),
@@ -88,8 +91,6 @@ const feeProbe = async ({
   const routeFromCache = await RoutesCache().findByKey(key)
   const validCachedRoute = !(routeFromCache instanceof Error)
   if (validCachedRoute) return toSats(routeFromCache.route.fee)
-
-  const maxFee = LnFeeCalculator().max(paymentAmount)
 
   const rawRoute = await lndService.findRouteForInvoice({ decodedInvoice, maxFee })
   if (rawRoute instanceof Error) return rawRoute
@@ -131,6 +132,9 @@ const noAmountProbeForFee = async ({
     return toSats(0)
   }
 
+  const maxFee = LnFeeCalculator().max(paymentAmount)
+  if(decodedInvoice.routeHints.length) return toSats(maxFee)
+
   const key = CachedRouteLookupKeyFactory().create({
     paymentHash,
     milliSats: toMilliSatsFromNumber(paymentAmount * 1000),
@@ -139,7 +143,6 @@ const noAmountProbeForFee = async ({
   const validCachedRoute = !(routeFromCache instanceof Error)
   if (validCachedRoute) return toSats(routeFromCache.route.fee)
 
-  const maxFee = LnFeeCalculator().max(paymentAmount)
 
   const rawRoute = await lndService.findRouteForNoAmountInvoice({
     decodedInvoice,

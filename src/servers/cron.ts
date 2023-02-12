@@ -24,12 +24,12 @@ const main = async () => {
   await deleteExpiredInvoiceUser()
   await deleteFailedPaymentsAttemptAllLnds()
 
-  const specterWalletConfig = getSpecterWalletConfig()
-  const specterWallet = new SpecterWallet({
-    logger: baseLogger,
-    config: specterWalletConfig,
-  })
-  await specterWallet.tentativelyRebalance()
+  // const specterWalletConfig = getSpecterWalletConfig()
+  // const specterWallet = new SpecterWallet({
+  //   logger: baseLogger,
+  //   config: specterWalletConfig,
+  // })
+  // await specterWallet.tentativelyRebalance()
 
   await updateRoutingFees()
 
