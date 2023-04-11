@@ -8,8 +8,13 @@ export const TwilioClient = (): IPhoneProviderService => {
     accountSid: getTwilioConfig().accountSid,
   })
 
-  const sendText = async ({ body, to, logger }: SendTextArguments) => {
+  const sendText = async ({ body, to, whatsapp, logger }: SendTextArguments) => {
     const twilioPhoneNumber = getTwilioConfig().twilioPhoneNumber
+
+    if (whatsapp) {
+      to = `whatsapp:${to}`
+    }
+
     try {
       await client.messages.create({
         from: twilioPhoneNumber,

@@ -11,6 +11,10 @@ const UserRequestAuthCodeInput = new GT.Input({
     phone: {
       type: GT.NonNull(Phone),
     },
+    whatsapp: {
+      type: GT.Boolean,
+      defaultValue: false,
+    },
   }),
 })
 
@@ -24,13 +28,13 @@ const UserRequestAuthCodeMutation = GT.Field({
       return { errors: [{ message: "Invalid request" }] } // TODO: confirm
     }
 
-    const { phone } = args.input
+    const { phone, whatsapp } = args.input
 
     if (phone instanceof Error) {
       return { errors: [{ message: phone.message }] }
     }
 
-    const status = await requestPhoneCode({ phone, logger, ip })
+    const status = await requestPhoneCode({ phone, whatsapp, logger, ip })
 
     if (status instanceof Error) {
       return { errors: [{ message: mapError(status) }] }
