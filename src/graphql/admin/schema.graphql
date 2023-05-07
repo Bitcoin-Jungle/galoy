@@ -15,6 +15,13 @@ enum AccountStatus {
   LOCKED
 }
 
+input AddColdStoragePaymentInput {
+  amount: SatAmount!
+  description: String
+  fee: SatAmount!
+  hash: String
+}
+
 """
 An authentication code valid for a single use
 """
@@ -154,6 +161,7 @@ Text field in a lightning payment transaction
 scalar Memo
 
 type Mutation {
+  addColdStoragePayment(input: AddColdStoragePaymentInput!): SuccessPayload!
   businessUpdateMapInfo(input: BusinessUpdateMapInfoInput!): UserDetailPayload!
   userLogin(input: UserLoginInput!): AuthTokenPayload!
   userRequestAuthCode(input: UserRequestAuthCodeInput!): SuccessPayload!

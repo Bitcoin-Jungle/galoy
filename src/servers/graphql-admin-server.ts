@@ -28,6 +28,7 @@ export async function startApolloServerForAdminSchema() {
         userUpdateStatus: and(isAuthenticated, isEditor),
         userUpdateLevel: and(isAuthenticated, isEditor),
         businessUpdateMapInfo: and(isAuthenticated, isEditor),
+        addColdStoragePayment: and(isAuthenticated, isEditor),
       },
     },
     { allowExternalErrors: true },
