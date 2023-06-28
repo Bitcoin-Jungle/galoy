@@ -8,6 +8,7 @@ import {
 import { CachedRouteLookupKeyFactory } from "@domain/routes/key-factory"
 import { LndService } from "@services/lnd"
 import { RoutesCache } from "@services/redis/routes"
+import { noFeePubkeys } from "@config/app"
 
 export const getLightningFee = async ({
   walletPublicId,
@@ -78,6 +79,11 @@ const feeProbe = async ({
   const lndService = LndService()
   if (lndService instanceof Error) return lndService
   if (lndService.isLocal(destination)) {
+    return toSats(0)
+  }
+
+  // LEE:: if point of sale pubkey, fee is 0
+  if (noFeePubkeys.indexOf(destination) !== -1) {
     return toSats(0)
   }
 
