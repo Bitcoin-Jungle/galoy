@@ -7,7 +7,7 @@ describe("LnFeeCalculator", () => {
     minAmount = toSats(FEEMIN / FEECAP)
   })
   it("returns the expected fee for a valid amount", () => {
-    const amount = toSats(minAmount + 100)
+    const amount = toSats(minAmount + 200)
     const maxFee = LnFeeCalculator().max(amount)
     const expectedMaxFee = toSats(Math.floor(FEECAP * amount))
     expect(maxFee).toEqual(expectedMaxFee)

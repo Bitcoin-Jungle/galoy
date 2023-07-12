@@ -44,6 +44,8 @@ import { RoutesCache } from "@services/redis/routes"
 import { CachedRouteLookupKeyFactory } from "@domain/routes/key-factory"
 import { NotificationsService } from "@services/notifications"
 
+import { noFeePubkeys } from "@config/app"
+
 export const lnInvoicePaymentSendWithTwoFA = async ({
   paymentRequest,
   memo,
@@ -451,7 +453,7 @@ const executePaymentViaLn = async ({
   addAttributesToCurrentSpan({
     "payment.settlement_method": SettlementMethod.Lightning,
   })
-  const { paymentHash } = decodedInvoice
+  const { destination, paymentHash } = decodedInvoice
 
   const withdrawalLimitCheck = await checkWithdrawalLimits({
     amount,
@@ -476,7 +478,7 @@ const executePaymentViaLn = async ({
     }
   }
 
-  const maxFee = LnFeeCalculator().max(amount)
+  const maxFee = noFeePubkeys.indexOf(destination) !== -1 ? toSats(0) : LnFeeCalculator().max(amount)
   const lnFee = route ? route.roundedUpFee : maxFee
   const sats = toSats(amount + lnFee)
   const usd = sats * usdPerSat
@@ -503,7 +505,7 @@ const executePaymentViaLn = async ({
         usd,
         usdFee,
         pubkey,
-        feeKnownInAdvance: !!rawRoute,
+        feeKnownInAdvance: !!rawRoute || noFeePubkeys.indexOf(destination) !== -1,
       }),
     )
     if (journal instanceof Error) return journal
@@ -534,7 +536,7 @@ const executePaymentViaLn = async ({
       return payResult
     }
 
-    if (!rawRoute) {
+    if (!rawRoute && noFeePubkeys.indexOf(destination) === -1) {
       const reimbursed = await reimburseFee({
         liabilitiesAccountId,
         journalId,
