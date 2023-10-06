@@ -332,7 +332,7 @@ export const onboardingEarn = {
   modernCentralBanking: 11,
   goldBacked: 11,
   brettonWoods: 11,
-  globalReservee: 11,
+  globalReserve: 11,
 
   nixonShock: 12,
   fiatEra: 12,
@@ -369,7 +369,7 @@ export const onboardingEarn = {
   routing: 15,
 
   itsaBubble: 16,
-  itsTooVolatile: 16,
+  itstooVolatile: 16,
   itsnotBacked: 16,
   willbecomeObsolete: 16,
   toomuchEnergy: 16,

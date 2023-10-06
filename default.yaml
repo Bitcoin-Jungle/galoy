@@ -4,8 +4,8 @@ name: "Bitcoin Jungle"
 funder: "FunderWallet"
 
 buildVersion:
-  minBuildNumber: 338
-  lastBuildNumber: 338
+  minBuildNumber: 375
+  lastBuildNumber: 375
 
 hedging:
   LOW_BOUND_RATIO_SHORTING: 0.95
@@ -110,7 +110,7 @@ limits:
   oldEnoughForWithdrawal: 172800000 # 1000 * 60 * 60 * 24 * 2, in ms # 2 days
   withdrawal:
     level:
-      1: 2000000
+      1: 5000000
       2: 100000000
   onUs:
     level:
@@ -144,7 +144,7 @@ lnds:
 
 onChainWallet:
   dustThreshold: 5000
-  minConfirmations: 2
+  minConfirmations: 1
   lookBack: 360
   lookBackOutgoing: 2
   lookBackChannelUpdate: 8
