@@ -9,6 +9,7 @@ const CaptchaRequestAuthCodeInput = new GT.Input({
   name: "CaptchaRequestAuthCodeInput",
   fields: () => ({
     phone: { type: GT.NonNull(Phone) },
+    whatsapp: { type: GT.Boolean, defaultValue: false },
     challengeCode: { type: GT.NonNull(GT.String) },
     validationCode: { type: GT.NonNull(GT.String) },
     secCode: { type: GT.NonNull(GT.String) },
@@ -23,12 +24,13 @@ const CaptchaRequestAuthCodeMutation = GT.Field({
   resolve: async (_, args, { logger, ip, geetest }) => {
     const {
       phone,
+      whatsapp,
       challengeCode: geetestChallenge,
       validationCode: geetestValidate,
       secCode: geetestSeccode,
     } = args.input
 
-    for (const input of [phone, geetestChallenge, geetestValidate, geetestSeccode]) {
+    for (const input of [phone, geetestChallenge, geetestValidate, geetestSeccode, whatsapp]) {
       if (input instanceof Error) {
         return { errors: [{ message: input.message }] }
       }
@@ -36,6 +38,7 @@ const CaptchaRequestAuthCodeMutation = GT.Field({
 
     const result = await requestPhoneCodeWithCaptcha({
       phone,
+      whatsapp,
       geetest,
       geetestChallenge,
       geetestValidate,

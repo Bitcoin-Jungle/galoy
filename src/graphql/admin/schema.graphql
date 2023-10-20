@@ -384,6 +384,7 @@ input UserLoginInput {
 
 input UserRequestAuthCodeInput {
   phone: Phone!
+  whatsapp: Boolean = false
 }
 
 input UserUpdateLevelInput {

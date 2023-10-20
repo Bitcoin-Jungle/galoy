@@ -15,6 +15,7 @@ import { isTestAccountPhone } from "."
 
 export const requestPhoneCodeWithCaptcha = async ({
   phone,
+  whatsapp,
   geetest,
   geetestChallenge,
   geetestValidate,
@@ -23,6 +24,7 @@ export const requestPhoneCodeWithCaptcha = async ({
   ip,
 }: {
   phone: PhoneNumber
+  whatsapp: boolean
   geetest: GeetestType
   geetestChallenge: string
   geetestValidate: string
@@ -42,16 +44,19 @@ export const requestPhoneCodeWithCaptcha = async ({
   return requestPhoneCode({
     phone,
     logger,
+    whatsapp,
     ip,
   })
 }
 
 export const requestPhoneCode = async ({
   phone,
+  whatsapp,
   logger,
   ip,
 }: {
   phone: PhoneNumber
+  whatsapp: boolean
   logger: Logger
   ip: IpAddress
 }): Promise<true | UnknownPhoneProviderServiceError> => {
@@ -78,12 +83,12 @@ export const requestPhoneCode = async ({
 
   const code = String(randomIntFromInterval(100000, 999999)) as PhoneCode
   const galoyInstanceName = getGaloyInstanceName()
-  const body = `${code} is your verification code for ${galoyInstanceName}`
+  const body = `*${code}* is your verification code. For your security, do not share this code.`
 
   const result = await PhoneCodesRepository().persistNew({ phone, code })
   if (result instanceof Error) return result
 
-  const sendTextArguments = { body, to: phone, logger }
+  const sendTextArguments = { body, to: phone, whatsapp, logger }
 
   return TwilioClient().sendText(sendTextArguments)
 }

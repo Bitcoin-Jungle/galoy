@@ -90,6 +90,7 @@ input CaptchaRequestAuthCodeInput {
   phone: Phone!
   secCode: String!
   validationCode: String!
+  whatsapp: Boolean = false
 }
 
 type ConsumerAccount implements Account {
@@ -799,6 +800,7 @@ type UserQuizQuestionUpdateCompletedPayload {
 
 input UserRequestAuthCodeInput {
   phone: Phone!
+  whatsapp: Boolean = false
 }
 
 union UserUpdate = IntraLedgerUpdate | LnUpdate | OnChainUpdate | Price

@@ -4,7 +4,8 @@ type UnknownPhoneProviderServiceError =
 
 type SendTextArguments = {
   body: string
-  to: PhoneNumber
+  to: string
+  whatsapp: boolean
   logger: Logger
 }
 
