@@ -259,7 +259,7 @@ const resolvers = {
         throw new ApolloError("Missing phone value", "GRAPHQL_VALIDATION_FAILED")
       }
       let success = true
-      const result = await requestPhoneCode({ phone, logger, ip })
+      const result = await requestPhoneCode({ phone, whatsapp: false, logger, ip })
       if (result instanceof Error) success = false
       return { success }
     },
