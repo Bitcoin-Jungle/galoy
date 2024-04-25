@@ -414,4 +414,5 @@ export const onboardingEarn = {
 export const noFeePubkeys = [
   '020003b9499a97c8dfbbab6b196319db37ba9c37bccb60477f3c867175f417988e',
   '02a75d026e57f33bcb08ea6a4c76fc671de0335beda94b6875ee5a37a122d32a92',
+  '037310ee65744f9c4a37cba7dae742a881f7bcc57f6be70b69a437860ffec410ee',
 ]
