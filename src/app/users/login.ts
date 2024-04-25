@@ -3,16 +3,19 @@ import {
   getFailedLoginAttemptPerIpLimits,
   getFailedLoginAttemptPerPhoneLimits,
   VALIDITY_TIME_CODE,
+  getIpConfig,
 } from "@config/app"
 import { CouldNotFindUserFromPhoneError } from "@domain/errors"
 import { RateLimitPrefix } from "@domain/rate-limit"
 import { RateLimiterExceededError } from "@domain/rate-limit/errors"
+import { IpFetcher } from "@services/ipfetcher"
+import { IpFetcherServiceError } from "@domain/ipfetcher"
 import { createToken } from "@services/jwt"
 import { UsersRepository } from "@services/mongoose"
 import { PhoneCodesRepository } from "@services/mongoose/phone-code"
 import { RedisRateLimitService } from "@services/rate-limit"
 import { TwilioClient } from "@services/twilio"
-import { isTestAccountPhoneAndCode } from "."
+import { isTestAccountPhoneAndCode, isTestAccountPhone } from "."
 
 export const login = async ({
   phone,
@@ -47,10 +50,28 @@ export const login = async ({
 
   await rewardFailedLoginAttemptPerIpLimits(ip)
 
+  // check IP address too for US
+  const ipConfig = getIpConfig()
+  if (ipConfig.ipRecordingEnabled && !isTestAccountPhone(phone)) {
+    const ipFetcher = IpFetcher()
+    const ipFetcherInfo = await ipFetcher.fetchIPInfo(ip as IpAddress)
+
+    if (ipFetcherInfo instanceof IpFetcherServiceError) {
+      logger.error({ ip }, "[login] impossible to get ip detail")
+      return ipFetcherInfo
+    }
+
+    if (ipFetcherInfo && ipFetcherInfo.country === "United States") {
+      logger.error({ ip }, "[login] disallowed country")
+      return new CouldNotFindUserFromPhoneError(phone)
+    }
+  }
+
   const userRepo = UsersRepository()
   let user: RepositoryError | User = await userRepo.findByPhone(phone)
 
   if (user instanceof CouldNotFindUserFromPhoneError) {
+
     subLogger.info({ phone }, "new user signup")
 
     const userRaw: NewUserInfo = { phone, phoneMetadata: null }
@@ -60,6 +81,9 @@ export const login = async ({
       // non fatal error
       subLogger.warn({ phone }, "impossible to fetch carrier")
     } else {
+      // disallow new user registration in US
+      if (carrierInfo.countryCode === "US") return new CouldNotFindUserFromPhoneError(phone)
+
       userRaw.phoneMetadata = carrierInfo
     }
 
