@@ -445,9 +445,9 @@ UserSchema.statics.getActiveUsers = async function (): Promise<Array<typeof User
   const users = await this.find({})
   const activeUsers: Array<typeof User> = []
   for (const user of users) {
-    if (await user.userIsActive) {
+    // if (await user.userIsActive) {
       activeUsers.push(user)
-    }
+    // }
   }
   return activeUsers
 }
