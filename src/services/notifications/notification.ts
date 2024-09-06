@@ -57,16 +57,10 @@ export const sendNotification = async ({
   logger.info({ message, user }, "sending notification")
 
   try {
-    const response = await admin.messaging().sendToDevice(
-      user.deviceToken.filter((token) => token.length === 163),
-      message,
-      {
-        // Required for background/quit data-only messages on iOS
-        // contentAvailable: true,
-        // Required for background/quit data-only messages on Android
-        // priority: 'high',
-      },
-    )
+    const response = await admin.messaging().sendMulticast({
+      tokens: user.deviceToken.filter((token) => token.length === 163),
+      ...message,
+    })
 
     logger.info(
       { response, user, title, body, data },
