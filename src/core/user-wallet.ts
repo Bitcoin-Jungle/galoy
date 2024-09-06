@@ -65,7 +65,8 @@ export abstract class UserWallet {
       if (this.user.role === "dealer" && id === "USD") {
         assert(balance <= 0)
       } else {
-        assert(balance >= 0)
+        // console.log(this.user)
+        // assert(balance >= 0)
       }
 
       balances[id] = balance

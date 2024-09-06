@@ -232,6 +232,7 @@ type Price {
 
 type Query {
   allLevels: [AccountLevel!]!
+  allUserBalances: [UserBalance!]!
   lightningInvoice(hash: PaymentHash!): LightningInvoice!
   lightningPayment(hash: PaymentHash!): LightningPayment!
   transactionById(id: ID!): Transaction
@@ -369,6 +370,13 @@ type User {
   phone: Phone!
   status: AccountStatus
   title: String
+  username: Username
+}
+
+type UserBalance {
+  balance: Float
+  lastConnection: String
+  phone: Phone!
   username: Username
 }
 
