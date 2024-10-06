@@ -56,18 +56,25 @@ export const sendNotification = async ({
 
   logger.info({ message, user }, "sending notification")
 
-  try {
-    const response = await admin.messaging().sendMulticast({
-      tokens: user.deviceToken.filter((token) => token.length === 163),
-      ...message,
-    })
+  const validTokens = user.deviceToken.filter((token) => token.length === 163)
 
-    logger.info(
-      { response, user, title, body, data },
-      "notification was sent successfully",
-    )
-  } catch (err) {
-    logger.info({ err, user, title, body, data }, "impossible to send notification")
+  for (const token of validTokens) {
+    try {
+      const response = await admin.messaging().send({
+        token,
+        ...message,
+      })
+
+      logger.info(
+        { response, user, token, title, body, data },
+        "notification was sent successfully"
+      )
+    } catch (err) {
+      logger.info(
+        { err, user, token, title, body, data },
+        "impossible to send notification"
+      )
+    }
   }
 
   // FIXME: any as a workaround to https://github.com/Microsoft/TypeScript/issues/15300
