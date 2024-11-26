@@ -61,7 +61,7 @@ export const login = async ({
       return ipFetcherInfo
     }
 
-    if (ipFetcherInfo && ipFetcherInfo.country === "United States") {
+    if (ipFetcherInfo && ipFetcherInfo.country === "United States" && ipFetcherInfo.asn !== "AS273139") {
       logger.error({ ip }, "[login] disallowed country")
       return new CouldNotFindUserFromPhoneError(phone)
     }
