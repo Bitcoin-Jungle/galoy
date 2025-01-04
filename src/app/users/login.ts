@@ -61,10 +61,10 @@ export const login = async ({
       return ipFetcherInfo
     }
 
-    if (ipFetcherInfo && ipFetcherInfo.country === "United States" && ipFetcherInfo.asn !== "AS273139") {
-      logger.error({ ip }, "[login] disallowed country")
-      return new CouldNotFindUserFromPhoneError(phone)
-    }
+    // if (ipFetcherInfo && ipFetcherInfo.country === "United States") {
+    //   logger.error({ ip }, "[login] disallowed country")
+    //   return new CouldNotFindUserFromPhoneError(phone)
+    // }
   }
 
   const userRepo = UsersRepository()
@@ -82,7 +82,7 @@ export const login = async ({
       subLogger.warn({ phone }, "impossible to fetch carrier")
     } else {
       // disallow new user registration in US
-      if (carrierInfo.countryCode === "US") return new CouldNotFindUserFromPhoneError(phone)
+      // if (carrierInfo.countryCode === "US") return new CouldNotFindUserFromPhoneError(phone)
 
       userRaw.phoneMetadata = carrierInfo
     }
