@@ -1,4 +1,5 @@
 import { onboardingEarn } from "@config/app"
+import { UserStatus } from "@core/user"
 import { toSats } from "@domain/bitcoin"
 import {
   CouldNotFindUserFromIdError,
@@ -34,7 +35,8 @@ export const UsersRepository = (): IUsersRepository => {
   const findByUsername = async (username: Username): Promise<User | RepositoryError> => {
     try {
       const result = await User.findOne(
-        { username: caseInsensitiveRegex(username) },
+        { username: caseInsensitiveRegex(username), status: UserStatus.Active },
+        
         { lastIPs: 0, lastConnection: 0 },
       )
       if (!result) {

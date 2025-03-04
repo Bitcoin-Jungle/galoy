@@ -6,6 +6,12 @@ import { caseInsensitiveRegex } from "@services/mongoose"
 
 const logger = baseLogger.child({ module: "admin" })
 
+export enum UserStatus {
+  Active = "active",
+  Locked = "locked",
+  // Add other statuses as needed
+}
+
 export async function usernameExists({ username }): Promise<boolean> {
   return Boolean(await User.findOne({ username: caseInsensitiveRegex(username) }))
 }
