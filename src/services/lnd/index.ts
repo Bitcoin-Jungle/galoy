@@ -32,6 +32,7 @@ import {
 import { TIMEOUT_PAYMENT } from "./auth"
 import { getActiveLnd, getLndFromPubkey, getLnds, offchainLnds } from "./utils"
 import { LndOfflineError } from "@core/error"
+import { baseLogger } from "@services/logger"
 
 export const LndService = (): ILightningService | LightningServiceError => {
   let lndAuth: AuthenticatedLnd, defaultPubkey: Pubkey
@@ -235,18 +236,66 @@ export const LndService = (): ILightningService | LightningServiceError => {
     pubkey?: Pubkey
     paymentHash: PaymentHash
   }): Promise<LnPaymentLookup | LightningServiceError> => {
-    if (pubkey) return lookupPaymentByPubkeyAndHash({ pubkey, paymentHash })
-
-    for (const { pubkey } of offchainLnds) {
-      const payment = await lookupPaymentByPubkeyAndHash({
-        pubkey: pubkey as Pubkey,
-        paymentHash,
-      })
-      if (payment instanceof Error) continue
-      return payment
+    // If a specific pubkey is provided, try that node first
+    if (pubkey) {
+      try {
+        return await lookupPaymentByPubkeyAndHash({ pubkey, paymentHash })
+      } catch (err) {
+        // If there's any error with the specified node, log it and try all nodes
+        baseLogger.warn(
+          { pubkey, err: err instanceof Error ? err.message : String(err) },
+          "Error with specified LND node, trying all available nodes",
+        )
+      }
+    }
+    
+    // Get the latest offchain LNDs to ensure we have the most up-to-date active status
+    // This is important because the health check updates the active status of LND nodes
+    const currentOffchainLnds = getLnds({ type: "offchain" })
+    
+    // First try active nodes
+    const activeLnds = currentOffchainLnds.filter(node => node.active)
+    for (const { pubkey } of activeLnds) {
+      try {
+        const payment = await lookupPaymentByPubkeyAndHash({
+          pubkey: pubkey as Pubkey,
+          paymentHash,
+        })
+        return payment
+      } catch (err) {
+        // Log the error but continue to the next node
+        baseLogger.debug(
+          { pubkey, err: err instanceof Error ? err.message : String(err) },
+          "Error looking up payment with active node, trying next node",
+        )
+        continue
+      }
+    }
+    
+    // If no active nodes worked, try inactive nodes as a last resort
+    const inactiveLnds = currentOffchainLnds.filter(node => !node.active)
+    for (const { pubkey } of inactiveLnds) {
+      try {
+        baseLogger.info(
+          { pubkey },
+          "Attempting to use inactive LND node as last resort",
+        )
+        const payment = await lookupPaymentByPubkeyAndHash({
+          pubkey: pubkey as Pubkey,
+          paymentHash,
+        })
+        return payment
+      } catch (err) {
+        // Log the error but continue to the next node
+        baseLogger.debug(
+          { pubkey, err: err instanceof Error ? err.message : String(err) },
+          "Error looking up payment with inactive node, trying next node",
+        )
+        continue
+      }
     }
 
-    return new PaymentNotFoundError("Payment hash not found")
+    return new PaymentNotFoundError("Payment hash not found in any LND node")
   }
 
   const cancelInvoice = async ({
@@ -406,6 +455,11 @@ const lookupPaymentByPubkeyAndHash = async ({
   try {
     ;({ lnd } = getLndFromPubkey({ pubkey }))
   } catch (err) {
+    // If the node is offline, throw the error directly so it can be caught by lookupPayment
+    if (err instanceof LndOfflineError) {
+      throw err
+    }
+    
     const errDetails = parseLndErrorDetails(err)
     switch (errDetails) {
       default:
