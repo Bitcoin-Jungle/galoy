@@ -14,5 +14,3 @@ export const checkedToUsername = (username: string): Username | ValidationError 
   }
   return username as Username
 }
-
-export * from "./recovery-key"

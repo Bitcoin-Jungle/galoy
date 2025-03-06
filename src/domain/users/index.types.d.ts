@@ -73,7 +73,6 @@ type User = {
   readonly phoneMetadata: PhoneMetadata | null
   language: UserLanguage
   twoFA: TwoFAForUser
-  recoveryKeyHash?: string
 }
 
 type NewUserInfo = {
