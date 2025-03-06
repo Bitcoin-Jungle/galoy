@@ -73,6 +73,77 @@ type BTCWallet implements Wallet {
   walletCurrency: WalletCurrency!
 }
 
+type BoltCard {
+  cardName: String!
+  createdAt: Timestamp!
+  dailyLimit: SatAmount!
+  enabled: Boolean!
+  id: ID!
+  lastUsedAt: Timestamp
+  txLimit: SatAmount!
+  uid: String!
+  updatedAt: Timestamp!
+  usages: [CardUsage!]!
+  walletId: WalletId!
+}
+
+input BoltCardLimits {
+  daily: SatAmount
+  tx: SatAmount
+}
+
+type BoltCardPayload {
+  boltCard: BoltCard
+  errors: [Error!]!
+}
+
+input BoltCardDisableInput {
+  id: ID!
+}
+
+input BoltCardRegisterInput {
+  cardName: String!
+  k0: String!
+  k1: String!
+  k2: String!
+  limits: BoltCardLimits
+  uid: String!
+  walletId: WalletId!
+}
+
+input BoltCardUpdateInput {
+  cardName: String
+  enabled: Boolean
+  id: ID!
+  limits: BoltCardLimits
+}
+
+input BoltCardWithdrawCallbackInput {
+  id: ID!
+  status: String!
+}
+
+input BoltCardWithdrawRequestInput {
+  amount: SatAmount!
+  id: ID!
+  otp: String
+}
+
+type BoltCardWithdrawRequestPayload {
+  errors: [Error!]!
+  status: String
+}
+
+type CardUsage {
+  amount: SatAmount!
+  createdAt: Timestamp!
+  id: ID!
+  ip: String
+  oldCounter: Int!
+  newCounter: Int!
+  userAgent: String
+}
+
 type CaptchaCreateChallengePayload {
   errors: [Error!]!
   result: CaptchaCreateChallengeResult
@@ -303,6 +374,11 @@ type MobileVersions {
 type Mutation {
   accountApiKeyCreate(input: AccountApiKeyCreateInput!): AccountApiKeyPayload!
   accountApiKeyDisable(input: AccountApiKeyDisableInput!): SuccessPayload!
+  boltCardDisable(input: BoltCardDisableInput!): BoltCardPayload!
+  boltCardRegister(input: BoltCardRegisterInput!): BoltCardPayload!
+  boltCardUpdate(input: BoltCardUpdateInput!): BoltCardPayload!
+  boltCardWithdrawCallback(input: BoltCardWithdrawCallbackInput!): SuccessPayload!
+  boltCardWithdrawRequest(input: BoltCardWithdrawRequestInput!): BoltCardWithdrawRequestPayload!
   captchaCreateChallenge: CaptchaCreateChallengePayload!
   captchaRequestAuthCode(input: CaptchaRequestAuthCodeInput!): SuccessPayload!
   deviceNotificationTokenCreate(
@@ -500,6 +576,8 @@ type PricePoint {
 
 type Query {
   accountApiKeys: [AccountApiKeyHashed]
+  boltCard(id: ID!): BoltCard
+  boltCards: [BoltCard!]!
   btcPriceList(range: PriceGraphRange!): [PricePoint]
   businessMapMarkers: [MapMarker]
   globals: Globals
