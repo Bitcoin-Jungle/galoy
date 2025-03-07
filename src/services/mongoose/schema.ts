@@ -271,12 +271,6 @@ const UserSchema = new Schema<UserType>({
     required: true,
     default: () => crypto.randomUUID(),
   },
-  
-  recoveryKeyHash: {
-    type: String,
-    index: true,
-    sparse: true,
-  },
 })
 
 // Define getter for ratioUsd

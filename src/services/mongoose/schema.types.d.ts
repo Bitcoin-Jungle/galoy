@@ -72,7 +72,6 @@ interface UserType {
   onchain?: OnChainObjectForUser[]
   twoFA: TwoFAForUser
   walletPublicId: WalletPublicId
-  recoveryKeyHash?: string
 
   // business:
   title?: string
