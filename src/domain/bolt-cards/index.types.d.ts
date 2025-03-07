@@ -1,5 +1,5 @@
 // Redefine WalletId for our module
-export type WalletId = string
+export type WalletId = `${string}`
 
 export type BoltCardId = `bolt-card:${string}`
 
@@ -11,9 +11,13 @@ export type BoltCard = {
   k0: string
   k1: string
   k2: string
+  k3: string
+  k4: string
   prevK0?: string
   prevK1?: string
   prevK2?: string
+  prevK3?: string
+  prevK4?: string
   counter: number
   enabled: boolean
   txLimit: number
@@ -23,27 +27,30 @@ export type BoltCard = {
   updatedAt: Date
 }
 
-export type CardUsageId = `card-usage:${string}`
+export type CardUsageId = `bolt-card-usage:${string}`
 
 export type CardUsage = {
   id: CardUsageId
   cardId: BoltCardId
-  ip?: string
-  userAgent?: string
-  spent: number
+  amount: number
   oldCounter: number
   newCounter: number
-  amount: number
+  spent?: boolean
+  spentAt?: Date | null
+  ip?: string
+  userAgent?: string
   createdAt: Date
 }
 
 export type CreateBoltCardInput = {
   walletId: WalletId
-  cardName: string
   uid: string
+  cardName: string
   k0: string
   k1: string
   k2: string
+  k3: string
+  k4: string
   txLimit?: number
   dailyLimit?: number
 }
@@ -51,21 +58,34 @@ export type CreateBoltCardInput = {
 export type UpdateBoltCardInput = {
   id: BoltCardId
   cardName?: string
-  txLimit?: number
-  dailyLimit?: number
-  enabled?: boolean
   k0?: string
   k1?: string
   k2?: string
+  k3?: string
+  k4?: string
+  otp?: string
+  enabled?: boolean
+  txLimit?: number
+  dailyLimit?: number
 }
 
-export type BoltCardsRepository = {
+export type UpdateCardUsageInput = {
+  amount?: number
+  spent?: boolean
+  spentAt?: Date | null
+}
+
+export interface BoltCardsRepository {
   findById(id: BoltCardId): Promise<BoltCard | null>
   findByWalletId(walletId: WalletId): Promise<BoltCard[]>
   findByUid(uid: string): Promise<BoltCard | null>
-  save(card: CreateBoltCardInput): Promise<BoltCard>
-  update(card: UpdateBoltCardInput): Promise<BoltCard | null>
+  findByOtp(otp: string): Promise<BoltCard | null>
+  save(input: CreateBoltCardInput): Promise<BoltCard>
+  update(input: UpdateBoltCardInput): Promise<BoltCard | null>
+  
   findCardUsagesByCardId(cardId: BoltCardId): Promise<CardUsage[]>
-  recordCardUsage(cardUsage: Omit<CardUsage, "id" | "createdAt">): Promise<CardUsage>
-  getDailyCardUsage(cardId: BoltCardId): Promise<number>
+  findCardUsageById(id: CardUsageId): Promise<CardUsage | null>
+  getDailyCardUsage(cardId: BoltCardId): Promise<CardUsage[]>
+  recordCardUsage(usage: Omit<CardUsage, "id" | "createdAt">): Promise<CardUsage>
+  updateCardUsage(id: CardUsageId, input: UpdateCardUsageInput): Promise<CardUsage | null>
 }

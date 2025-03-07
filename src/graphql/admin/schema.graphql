@@ -52,11 +52,35 @@ type BTCWallet implements Wallet {
   walletCurrency: WalletCurrency!
 }
 
+type BoltCard {
+  cardName: String!
+  createdAt: Timestamp!
+  dailyLimit: Int!
+  enabled: Boolean!
+  id: ID!
+  lastUsedAt: Timestamp
+  txLimit: Int!
+  uid: String!
+  updatedAt: Timestamp!
+  usages: [CardUsage!]!
+  walletId: WalletId!
+}
+
 input BusinessUpdateMapInfoInput {
   latitude: Float!
   longitude: Float!
   title: String!
   username: Username!
+}
+
+type CardUsage {
+  amount: Int!
+  createdAt: Timestamp!
+  id: ID!
+  ip: String
+  newCounter: Int!
+  oldCounter: Int!
+  userAgent: String
 }
 
 type ConsumerAccount implements Account {

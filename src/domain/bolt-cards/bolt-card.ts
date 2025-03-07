@@ -7,6 +7,7 @@ import {
   UpdateBoltCardInput,
   WalletId
 } from "./index.types"
+import { randomBytes } from "crypto"
 
 export const ZERO_KEY = "00000000000000000000000000000000"
 export const DEFAULT_TX_LIMIT = 100000 // in sats
@@ -50,13 +51,13 @@ export const createBoltCardId = (): BoltCardId => {
 }
 
 export const createCardUsageId = (): CardUsageId => {
-  const timestamp = Date.now().toString(36)
-  const randomStr = Math.random().toString(36).substring(2, 10)
-  return `card-usage:${timestamp}${randomStr}` as CardUsageId
+  const timestamp = Date.now().toString()
+  const randomStr = randomBytes(8).toString("hex")
+  return `bolt-card-usage:${timestamp}${randomStr}` as CardUsageId
 }
 
 export const validateCardInput = (input: CreateBoltCardInput): CreateBoltCardInput => {
-  const { walletId, cardName, uid, k0, k1, k2 } = input
+  const { walletId, cardName, uid, k0, k1, k2, k3, k4 } = input
   
   if (!walletId) {
     throw new InvalidBoltCardError("Wallet ID is required")
@@ -84,6 +85,14 @@ export const validateCardInput = (input: CreateBoltCardInput): CreateBoltCardInp
     throw new InvalidBoltCardError("Invalid k2 key format")
   }
   
+  if (!keyRegex.test(k3)) {
+    throw new InvalidBoltCardError("Invalid k3 key format")
+  }
+  
+  if (!keyRegex.test(k4)) {
+    throw new InvalidBoltCardError("Invalid k4 key format")
+  }
+  
   const txLimit = input.txLimit || DEFAULT_TX_LIMIT
   const dailyLimit = input.dailyLimit || DEFAULT_DAILY_LIMIT
   
@@ -107,7 +116,7 @@ export const validateCardInput = (input: CreateBoltCardInput): CreateBoltCardInp
 }
 
 export const validateCardUpdateInput = (input: UpdateBoltCardInput): UpdateBoltCardInput => {
-  const { id, cardName, txLimit, dailyLimit, k0, k1, k2 } = input
+  const { id, cardName, txLimit, dailyLimit, k0, k1, k2, k3, k4, otp } = input
   
   if (!id) {
     throw new InvalidBoltCardError("Card ID is required")
@@ -129,6 +138,14 @@ export const validateCardUpdateInput = (input: UpdateBoltCardInput): UpdateBoltC
   
   if (k2 && !keyRegex.test(k2)) {
     throw new InvalidBoltCardError("Invalid k2 key format")
+  }
+  
+  if (k3 && !keyRegex.test(k3)) {
+    throw new InvalidBoltCardError("Invalid k3 key format")
+  }
+  
+  if (k4 && !keyRegex.test(k4)) {
+    throw new InvalidBoltCardError("Invalid k4 key format")
   }
   
   if (txLimit !== undefined && txLimit <= 0) {
@@ -167,6 +184,8 @@ export const createBoltCard = (
     k0: input.k0,
     k1: input.k1,
     k2: input.k2,
+    k3: input.k3,
+    k4: input.k4,
     counter: 0,
     enabled: true,
     txLimit: input.txLimit || DEFAULT_TX_LIMIT,
@@ -179,12 +198,14 @@ export const createBoltCard = (
 export const updateBoltCard = (card: BoltCard, input: UpdateBoltCardInput): BoltCard => {
   validateCardUpdateInput(input)
   
-  const { cardName, txLimit, dailyLimit, enabled, k0, k1, k2 } = input
+  const { cardName, txLimit, dailyLimit, enabled, k0, k1, k2, k3, k4, otp } = input
   
   // Backup previous keys if new keys are provided
   const prevK0 = k0 ? card.k0 : card.prevK0
   const prevK1 = k1 ? card.k1 : card.prevK1
   const prevK2 = k2 ? card.k2 : card.prevK2
+  const prevK3 = k3 ? card.k3 : card.prevK3
+  const prevK4 = k4 ? card.k4 : card.prevK4
   
   return {
     ...card,
@@ -195,9 +216,14 @@ export const updateBoltCard = (card: BoltCard, input: UpdateBoltCardInput): Bolt
     k0: k0 || card.k0,
     k1: k1 || card.k1,
     k2: k2 || card.k2,
+    k3: k3 || card.k3,
+    k4: k4 || card.k4,
     prevK0,
     prevK1,
     prevK2,
+    prevK3,
+    prevK4,
+    otp: otp !== undefined ? otp : card.otp,
     updatedAt: new Date(),
   }
 }
@@ -205,22 +231,25 @@ export const updateBoltCard = (card: BoltCard, input: UpdateBoltCardInput): Bolt
 export const validateCardTransaction = (
   card: BoltCard,
   amount: number,
-  dailyUsage: number,
+  dailyUsage: CardUsage[],
 ): void => {
   if (!card.enabled) {
     throw new BoltCardDisabledError()
   }
-  
+
   if (amount > card.txLimit) {
     throw new BoltCardLimitExceededError(
-      `Transaction amount (${amount}) exceeds card limit (${card.txLimit})`,
+      `Transaction amount ${amount} exceeds card limit of ${card.txLimit}`
     )
   }
-  
-  const newDailyTotal = dailyUsage + amount
-  if (newDailyTotal > card.dailyLimit) {
+
+  // Calculate total daily spent from usage array
+  const totalDailySpent = dailyUsage.reduce((total, usage) => 
+    usage.spent ? total + usage.amount : total, 0)
+
+  if (totalDailySpent + amount > card.dailyLimit) {
     throw new BoltCardLimitExceededError(
-      `Daily limit (${card.dailyLimit}) would be exceeded: ${dailyUsage} used + ${amount} requested = ${newDailyTotal}`,
+      `Transaction would exceed daily limit of ${card.dailyLimit}. Already spent ${totalDailySpent} today.`
     )
   }
 }
@@ -234,7 +263,7 @@ export const createCardUsage = (
 ): Omit<CardUsage, "id" | "createdAt"> => {
   return {
     cardId,
-    spent: amount,
+    spent: false,
     oldCounter,
     newCounter,
     amount,

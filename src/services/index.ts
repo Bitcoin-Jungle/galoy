@@ -12,6 +12,7 @@ export * from "./rate-limit"
 export * from "./price"
 export * from "./lock"
 export * from "./notifications"
+export * from "./bolt-card"
 
 export const boltCardService = new BoltCardService(
   BoltCardsRepositoryImpl(BoltCardModel, CardUsageModel)

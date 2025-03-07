@@ -4,6 +4,7 @@ import ConsumerAccount from "./object/consumer-account"
 // import FiatWallet from "./object/fiat-wallet"
 import InputError from "./object/input-error"
 import PaymentError from "./object/payment-error"
+import BoltCard from "./object/bolt-card"
 
 // The following types are not directly included
 // in the GraphQL schema. They only implement interfaces.
@@ -15,4 +16,5 @@ export const ALL_INTERFACE_TYPES = [
   // BusinessAccount,
   BTCWallet,
   // FiatWallet,
+  BoltCard,
 ]

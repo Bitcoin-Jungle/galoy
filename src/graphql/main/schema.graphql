@@ -76,29 +76,56 @@ type BTCWallet implements Wallet {
 type BoltCard {
   cardName: String!
   createdAt: Timestamp!
-  dailyLimit: SatAmount!
+  dailyLimit: Int!
   enabled: Boolean!
   id: ID!
   lastUsedAt: Timestamp
-  txLimit: SatAmount!
+  txLimit: Int!
   uid: String!
   updatedAt: Timestamp!
   usages: [CardUsage!]!
   walletId: WalletId!
 }
 
-input BoltCardLimits {
-  daily: SatAmount
-  tx: SatAmount
+input BoltCardDisableInput {
+  id: ID!
 }
 
-type BoltCardPayload {
+type BoltCardDisablePayload {
   boltCard: BoltCard
   errors: [Error!]!
 }
 
-input BoltCardDisableInput {
-  id: ID!
+input BoltCardGenerateOtpInput {
+  cardId: ID!
+}
+
+type BoltCardGenerateOtpPayload {
+  errors: [Error!]!
+  otp: String
+}
+
+input BoltCardLimitsInput {
+  daily: Int
+  tx: Int
+}
+
+input BoltCardPairInput {
+  baseUrl: String!
+  otp: String!
+}
+
+type BoltCardPairPayload {
+  cardName: String
+  errors: [Error!]!
+  k0: String
+  k1: String
+  k2: String
+  k3: String
+  k4: String
+  lnurlwBase: String
+  protocolName: String
+  protocolVersion: String
 }
 
 input BoltCardRegisterInput {
@@ -106,42 +133,54 @@ input BoltCardRegisterInput {
   k0: String!
   k1: String!
   k2: String!
-  limits: BoltCardLimits
+  k3: String!
+  k4: String!
+  limits: BoltCardLimitsInput
   uid: String!
-  walletId: WalletId!
+}
+
+type BoltCardRegisterPayload {
+  boltCard: BoltCard
+  errors: [Error!]!
 }
 
 input BoltCardUpdateInput {
   cardName: String
   enabled: Boolean
   id: ID!
-  limits: BoltCardLimits
+  limits: BoltCardLimitsInput
+}
+
+type BoltCardUpdatePayload {
+  boltCard: BoltCard
+  errors: [Error!]!
 }
 
 input BoltCardWithdrawCallbackInput {
-  id: ID!
-  status: String!
+  k1: String!
+  pr: String!
 }
 
-input BoltCardWithdrawRequestInput {
-  amount: SatAmount!
-  id: ID!
-  otp: String
-}
-
-type BoltCardWithdrawRequestPayload {
+type BoltCardWithdrawCallbackPayload {
   errors: [Error!]!
   status: String
 }
 
-type CardUsage {
-  amount: SatAmount!
-  createdAt: Timestamp!
-  id: ID!
-  ip: String
-  oldCounter: Int!
-  newCounter: Int!
-  userAgent: String
+input BoltCardWithdrawRequestInput {
+  baseUrl: String!
+  c: String!
+  cardId: ID!
+  p: String!
+}
+
+type BoltCardWithdrawRequestPayload {
+  callback: String
+  defaultDescription: String
+  errors: [Error!]!
+  k1: String
+  maxWithdrawable: Int
+  minWithdrawable: Int
+  tag: String
 }
 
 type CaptchaCreateChallengePayload {
@@ -162,6 +201,16 @@ input CaptchaRequestAuthCodeInput {
   secCode: String!
   validationCode: String!
   whatsapp: Boolean = false
+}
+
+type CardUsage {
+  amount: Int!
+  createdAt: Timestamp!
+  id: ID!
+  ip: String
+  newCounter: Int!
+  oldCounter: Int!
+  userAgent: String
 }
 
 type ConsumerAccount implements Account {
@@ -374,11 +423,17 @@ type MobileVersions {
 type Mutation {
   accountApiKeyCreate(input: AccountApiKeyCreateInput!): AccountApiKeyPayload!
   accountApiKeyDisable(input: AccountApiKeyDisableInput!): SuccessPayload!
-  boltCardDisable(input: BoltCardDisableInput!): BoltCardPayload!
-  boltCardRegister(input: BoltCardRegisterInput!): BoltCardPayload!
-  boltCardUpdate(input: BoltCardUpdateInput!): BoltCardPayload!
-  boltCardWithdrawCallback(input: BoltCardWithdrawCallbackInput!): SuccessPayload!
-  boltCardWithdrawRequest(input: BoltCardWithdrawRequestInput!): BoltCardWithdrawRequestPayload!
+  boltCardDisable(input: BoltCardDisableInput!): BoltCardDisablePayload
+  boltCardGenerateOtp(input: BoltCardGenerateOtpInput!): BoltCardGenerateOtpPayload
+  boltCardPair(input: BoltCardPairInput!): BoltCardPairPayload
+  boltCardRegister(input: BoltCardRegisterInput!): BoltCardRegisterPayload
+  boltCardUpdate(input: BoltCardUpdateInput!): BoltCardUpdatePayload
+  boltCardWithdrawCallback(
+    input: BoltCardWithdrawCallbackInput!
+  ): BoltCardWithdrawCallbackPayload
+  boltCardWithdrawRequest(
+    input: BoltCardWithdrawRequestInput!
+  ): BoltCardWithdrawRequestPayload
   captchaCreateChallenge: CaptchaCreateChallengePayload!
   captchaRequestAuthCode(input: CaptchaRequestAuthCodeInput!): SuccessPayload!
   deviceNotificationTokenCreate(

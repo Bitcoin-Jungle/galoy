@@ -1,11 +1,12 @@
 import { Model } from "mongoose"
-import { 
+import type { 
   BoltCard, 
   BoltCardId, 
   CardUsage, 
   CardUsageId, 
   CreateBoltCardInput, 
   UpdateBoltCardInput, 
+  UpdateCardUsageInput,
   BoltCardsRepository,
   WalletId
 } from "../domain/bolt-cards/index.types"
@@ -25,9 +26,13 @@ const toBoltCard = (document: Record<string, unknown>): BoltCard => {
     k0,
     k1,
     k2,
+    k3,
+    k4,
     prevK0,
     prevK1,
     prevK2,
+    prevK3,
+    prevK4,
     counter,
     enabled,
     txLimit,
@@ -45,9 +50,13 @@ const toBoltCard = (document: Record<string, unknown>): BoltCard => {
     k0: k0 as string,
     k1: k1 as string,
     k2: k2 as string,
+    k3: k3 as string,
+    k4: k4 as string,
     prevK0: prevK0 as string | undefined,
     prevK1: prevK1 as string | undefined,
     prevK2: prevK2 as string | undefined,
+    prevK3: prevK3 as string | undefined,
+    prevK4: prevK4 as string | undefined,
     counter: counter as number,
     enabled: enabled as boolean,
     txLimit: txLimit as number,
@@ -62,24 +71,26 @@ const toCardUsage = (document: Record<string, unknown>): CardUsage => {
   const {
     _id,
     cardId,
-    ip,
-    userAgent,
-    spent,
+    amount,
     oldCounter,
     newCounter,
-    amount,
+    spent,
+    spentAt,
+    ip,
+    userAgent,
     createdAt,
   } = document
 
   return {
     id: _id as CardUsageId,
     cardId: cardId as BoltCardId,
-    ip: ip as string | undefined,
-    userAgent: userAgent as string | undefined,
-    spent: spent as number,
+    amount: amount as number,
     oldCounter: oldCounter as number,
     newCounter: newCounter as number,
-    amount: amount as number,
+    spent: spent as boolean,
+    spentAt: spentAt as Date | null | undefined,
+    ip: ip as string | undefined,
+    userAgent: userAgent as string | undefined,
     createdAt: createdAt as Date,
   }
 }
@@ -105,12 +116,18 @@ export const BoltCardsRepositoryImpl = (
     return toBoltCard(document)
   }
 
-  const save = async (card: CreateBoltCardInput): Promise<BoltCard> => {
+  const findByOtp = async (otp: string): Promise<BoltCard | null> => {
+    const document = await boltCardModel.findOne({ otp }).lean()
+    if (!document) return null
+    return toBoltCard(document)
+  }
+
+  const save = async (input: CreateBoltCardInput): Promise<BoltCard> => {
     // Check if card with same UID already exists
-    const existingCard = await findByUid(card.uid)
+    const existingCard = await findByUid(input.uid)
     
     // Create domain entity
-    const newCard = createBoltCard(card, existingCard)
+    const newCard = createBoltCard(input, existingCard)
     
     // Save to database
     const document = await boltCardModel.create({
@@ -121,6 +138,8 @@ export const BoltCardsRepositoryImpl = (
       k0: newCard.k0,
       k1: newCard.k1,
       k2: newCard.k2,
+      k3: newCard.k3,
+      k4: newCard.k4,
       counter: newCard.counter,
       enabled: newCard.enabled,
       txLimit: newCard.txLimit,
@@ -150,12 +169,17 @@ export const BoltCardsRepositoryImpl = (
         k0: updatedCard.k0,
         k1: updatedCard.k1,
         k2: updatedCard.k2,
+        k3: updatedCard.k3,
+        k4: updatedCard.k4,
         prevK0: updatedCard.prevK0,
         prevK1: updatedCard.prevK1,
         prevK2: updatedCard.prevK2,
+        prevK3: updatedCard.prevK3,
+        prevK4: updatedCard.prevK4,
         txLimit: updatedCard.txLimit,
         dailyLimit: updatedCard.dailyLimit,
         enabled: updatedCard.enabled,
+        otp: updatedCard.otp,
         updatedAt: updatedCard.updatedAt,
       },
       { new: true }
@@ -166,11 +190,17 @@ export const BoltCardsRepositoryImpl = (
   }
 
   const findCardUsagesByCardId = async (cardId: BoltCardId): Promise<CardUsage[]> => {
-    const documents = await cardUsageModel.find({ cardId }).lean()
+    const documents = await cardUsageModel.find({ cardId }).sort({ createdAt: -1 }).lean()
     return documents.map(toCardUsage)
   }
 
-  const recordCardUsage = async (cardUsage: Omit<CardUsage, "id" | "createdAt">): Promise<CardUsage> => {
+  const findCardUsageById = async (id: CardUsageId): Promise<CardUsage | null> => {
+    const document = await cardUsageModel.findOne({ _id: id }).lean()
+    if (!document) return null
+    return toCardUsage(document)
+  }
+
+  const recordCardUsage = async (usage: Omit<CardUsage, "id" | "createdAt">): Promise<CardUsage> => {
     // Create ID for the usage record
     const id = createCardUsageId()
     const createdAt = new Date()
@@ -178,49 +208,58 @@ export const BoltCardsRepositoryImpl = (
     // Store in database
     const document = await cardUsageModel.create({
       _id: id,
-      cardId: cardUsage.cardId,
-      ip: cardUsage.ip,
-      userAgent: cardUsage.userAgent,
-      spent: cardUsage.spent,
-      oldCounter: cardUsage.oldCounter,
-      newCounter: cardUsage.newCounter,
-      amount: cardUsage.amount,
+      cardId: usage.cardId,
+      amount: usage.amount,
+      oldCounter: usage.oldCounter,
+      newCounter: usage.newCounter,
+      spent: usage.spent || false,
+      spentAt: usage.spentAt,
+      ip: usage.ip,
+      userAgent: usage.userAgent,
       createdAt,
     })
 
     return toCardUsage(document.toObject())
   }
 
-  const getDailyCardUsage = async (cardId: BoltCardId): Promise<number> => {
+  const getDailyCardUsage = async (cardId: BoltCardId): Promise<CardUsage[]> => {
     const startOfDay = new Date()
     startOfDay.setHours(0, 0, 0, 0)
     
-    const result = await cardUsageModel.aggregate([
-      {
-        $match: {
-          cardId,
-          createdAt: { $gte: startOfDay },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$spent" },
-        },
-      },
-    ])
+    const documents = await cardUsageModel.find({
+      cardId,
+      createdAt: { $gte: startOfDay },
+      spent: true
+    }).lean()
+    
+    return documents.map(toCardUsage)
+  }
 
-    return result.length > 0 ? result[0].total : 0
+  const updateCardUsage = async (id: CardUsageId, input: UpdateCardUsageInput): Promise<CardUsage | null> => {
+    const document = await cardUsageModel.findOneAndUpdate(
+      { _id: id },
+      { 
+        ...input,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).lean()
+    
+    if (!document) return null
+    return toCardUsage(document)
   }
 
   return {
     findById,
     findByWalletId,
     findByUid,
+    findByOtp,
     save,
     update,
     findCardUsagesByCardId,
-    recordCardUsage,
+    findCardUsageById,
     getDailyCardUsage,
+    recordCardUsage,
+    updateCardUsage,
   }
 }

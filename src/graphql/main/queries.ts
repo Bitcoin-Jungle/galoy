@@ -10,6 +10,8 @@ import QuizQuestionsQuery from "@graphql/root/query/quiz-questions"
 import BtcPriceListQuery from "@graphql/root/query/btc-price-list"
 import OnChainTxFeeQuery from "@graphql/root/query/on-chain-tx-fee-query"
 import AccountApiKeysQuery from "@graphql/root/query/account-api-keys"
+import BoltCardQuery from "@graphql/root/query/bolt-card"
+import BoltCardsQuery from "@graphql/root/query/bolt-cards"
 
 const QueryType = new GT.Object({
   name: "Query",
@@ -24,6 +26,8 @@ const QueryType = new GT.Object({
     btcPriceList: BtcPriceListQuery,
     onChainTxFee: OnChainTxFeeQuery,
     accountApiKeys: AccountApiKeysQuery,
+    boltCard: BoltCardQuery,
+    boltCards: BoltCardsQuery,
   }),
 })
 
