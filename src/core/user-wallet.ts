@@ -180,6 +180,43 @@ export abstract class UserWallet {
     }
   }
 
+  async updateEmail({
+    email,
+  }): Promise<{ email: string | null; id: string }> {
+    try {
+      // Check if user already has an email set - prevent changes
+      const currentUser = await User.findOne({ _id: this.user.id })
+      if (currentUser?.email) {
+        throw new DbError(`Email can only be set once`, {
+          forwardToClient: true,
+          logger: this.logger,
+          level: "warn",
+        })
+      }
+      
+      await User.findOneAndUpdate({ _id: this.user.id }, { email })
+      return { email, id: this.user.id }
+    } catch (err) {
+      this.logger.error({ err }, "error updating email")
+      
+      // Check for MongoDB duplicate key error (E11000)
+      if (err.name === 'MongoError' && err.code === 11000 && err.keyPattern?.email) {
+        throw new DbError("Email is already in use", {
+          forwardToClient: true,
+          logger: this.logger,
+          level: "warn",
+        })
+      }
+      
+      throw new DbError("error updating email", {
+        forwardToClient: true,
+        logger: this.logger,
+        level: "error",
+        err,
+      })
+    }
+  }
+
   static getCurrencyEquivalent({
     sats,
     fee,

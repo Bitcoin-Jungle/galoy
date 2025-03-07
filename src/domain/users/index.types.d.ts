@@ -16,6 +16,9 @@ type ContactAlias = string & { [contactAliasSymbol]: never }
 declare const quizQuestionIdSymbol: unique symbol
 type QuizQuestionId = string & { [quizQuestionIdSymbol]: never }
 
+declare const emailSymbol: unique symbol
+type Email = string & { [emailSymbol]: never }
+
 type UserContact = {
   readonly id: Username
   readonly username: Username
@@ -71,6 +74,7 @@ type User = {
   readonly createdAt: Date
   readonly phone: PhoneNumber
   readonly phoneMetadata: PhoneMetadata | null
+  email: Email | null
   language: UserLanguage
   twoFA: TwoFAForUser
 }

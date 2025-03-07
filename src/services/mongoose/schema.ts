@@ -177,6 +177,14 @@ const UserSchema = new Schema<UserType>({
       partialFilterExpression: { username: { $type: "string" } },
     },
   },
+  email: {
+    type: String,
+    index: {
+      unique: true,
+      sparse: true,
+      collation: { locale: "en", strength: 2 },
+    },
+  },
   deviceToken: {
     type: [String],
     default: [],

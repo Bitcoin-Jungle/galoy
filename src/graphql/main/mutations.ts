@@ -19,6 +19,7 @@ import UserLoginMutation from "@graphql/root/mutation/user-login"
 import UserRequestAuthCodeMutation from "@graphql/root/mutation/user-request-auth-code"
 import UserUpdateLanguageMutation from "@graphql/root/mutation/user-update-language"
 import UserUpdateUsernameMutation from "@graphql/root/mutation/user-update-username"
+import UserUpdateEmailMutation from "@graphql/root/mutation/user-update-email"
 import UserContactUpdateAliasMutation from "@graphql/root/mutation/user-contact-update-alias"
 import UserQuizQuestionUpdateCompletedMutation from "@graphql/root/mutation/user-quiz-question-update-completed"
 import OnChainPaymentSendMutation from "@graphql/root/mutation/onchain-payment-send"
@@ -46,6 +47,7 @@ const MutationType = new GT.Object({
 
     userUpdateLanguage: UserUpdateLanguageMutation,
     userUpdateUsername: UserUpdateUsernameMutation,
+    userUpdateEmail: UserUpdateEmailMutation,
     userContactUpdateAlias: UserContactUpdateAliasMutation,
 
     lnInvoiceFeeProbe: LnInvoiceFeeProbeMutation,
