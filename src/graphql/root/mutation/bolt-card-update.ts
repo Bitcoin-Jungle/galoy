@@ -64,6 +64,20 @@ const BoltCardUpdateMutation = GT.Field({
         dailyLimit: input.limits?.daily,
       }
 
+      if(!updateInput.txLimit) {
+        updateInput.txLimit = undefined
+      } 
+
+      if(!updateInput.dailyLimit) {
+        updateInput.dailyLimit = undefined
+      }
+      
+      if(!updateInput.cardName) {
+        return {
+          errors: [{ message: "Card name is required" }],
+        }
+      }
+
       // Update the card
       const updatedCard = await boltCardService.updateCard(updateInput)
 

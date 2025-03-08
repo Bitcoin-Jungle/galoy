@@ -5,6 +5,7 @@ import { InvalidBoltCardError } from "@domain/bolt-cards/bolt-card"
 import BoltCardType from "@graphql/types/object/bolt-card"
 import IError from "@graphql/types/abstract/error"
 import BoltCardLimitsInput from "@graphql/types/input/bolt-card-limits-input"
+import { create } from "lodash"
 
 // Define input types
 const BoltCardRegisterInput = new GT.Input({
@@ -60,6 +61,60 @@ const BoltCardRegisterMutation = GT.Field({
         dailyLimit: input.limits?.daily,
       }
 
+      if(createInput.uid.length !== 14) {
+        return {
+          errors: [{ message: "Invalid UID" }],
+        }
+      }
+
+      if(createInput.k0.length !== 32) {
+        return {
+          errors: [{ message: "Invalid k0" }],
+        }
+      }
+
+      if(createInput.k1.length !== 32) {
+        return {
+          errors: [{ message: "Invalid k1" }],
+        }
+      }
+
+      if(createInput.k2.length !== 32) {
+        return {
+          errors: [{ message: "Invalid k2" }],
+        }
+      }
+
+      if(createInput.k3.length !== 32) {
+        return {
+          errors: [{ message: "Invalid k3" }],
+        }
+      }
+
+      if(createInput.k4.length !== 32) {
+        return {
+          errors: [{ message: "Invalid k4" }],
+        }
+      }
+
+      if(!createInput.cardName) {
+        return {
+          errors: [{ message: "Card name is required" }],
+        }
+      }
+      
+      if(!createInput.txLimit || isNaN(createInput.txLimit)) {
+        return {
+          errors: [{ message: "Invalid tx limit" }],
+        }
+      }
+
+      if(!createInput.dailyLimit || isNaN(createInput.dailyLimit)) {
+        return {
+          errors: [{ message: "Invalid daily limit" }],
+        }
+      }
+      
       // Create the card
       const card = await boltCardService.createCard(createInput)
 
