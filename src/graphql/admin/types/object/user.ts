@@ -14,6 +14,7 @@ const User = new GT.Object({
   fields: () => ({
     id: { type: GT.NonNullID },
     phone: { type: GT.NonNull(Phone) },
+    email: { type: GT.String },
     username: { type: Username },
     language: { type: GT.NonNull(Language) },
     level: { type: AccountLevel },
