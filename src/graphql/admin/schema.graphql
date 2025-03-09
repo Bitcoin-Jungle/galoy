@@ -387,6 +387,7 @@ enum TxStatus {
 type User {
   coordinates: Coordinates
   createdAt: Timestamp!
+  email: String
   id: ID!
   language: Language!
   level: AccountLevel
