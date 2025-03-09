@@ -167,7 +167,7 @@ const BoltCardWithdrawRequestMutation = GT.Field({
           }
           
           // Generate callback URL
-          const callbackUrl = `${baseUrl}/api/lnurl/withdraw/${card.id}?k1=${hit.id}`
+          const callbackUrl = `${baseUrl}/api/lnurl/withdraw/${card.id}`
 
           // Return LNURL withdraw request response
           return {
