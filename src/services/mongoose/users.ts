@@ -102,6 +102,7 @@ export const UsersRepository = (): IUsersRepository => {
     contacts,
     deviceTokens,
     twoFA,
+    email,
   }: User): Promise<User | RepositoryError> => {
     try {
       const data = {
@@ -114,6 +115,7 @@ export const UsersRepository = (): IUsersRepository => {
         })),
         deviceToken: deviceTokens,
         twoFA,
+        email,
       }
       const result = await User.findOneAndUpdate({ _id: id }, data)
       if (!result) {
@@ -124,6 +126,7 @@ export const UsersRepository = (): IUsersRepository => {
       return new UnknownRepositoryError(err)
     }
   }
+
 
   return {
     findById,
@@ -142,6 +145,7 @@ const userFromRaw = (result: UserType): User => ({
   phone: result.phone as PhoneNumber,
   language: result.language as UserLanguage,
   twoFA: result.twoFA as TwoFAForUser,
+  email: result.email as Email,
   contacts: result.contacts.reduce(
     (res: UserContact[], contact: ContactObjectForUser): UserContact[] => {
       if (contact.id) {

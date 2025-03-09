@@ -32,6 +32,10 @@ const GraphQLUser = new GT.Object({
       type: Username,
       description: "Optional immutable user friendly identifier.",
     },
+    email: {
+      type: GT.String,
+      description: "User's email address. Can only be set once and may be null if not set.",
+    },
     language: {
       type: GT.NonNull(Language),
       description: dedent`Preferred language for user.

@@ -467,6 +467,7 @@ type Mutation {
     input: UserQuizQuestionUpdateCompletedInput!
   ): UserQuizQuestionUpdateCompletedPayload!
   userRequestAuthCode(input: UserRequestAuthCodeInput!): SuccessPayload!
+  userUpdateEmail(input: UserUpdateEmailInput!): UserUpdateEmailPayload!
   userUpdateLanguage(input: UserUpdateLanguageInput!): UserUpdateLanguagePayload!
   userUpdateUsername(input: UserUpdateUsernameInput!): UserUpdateUsernamePayload!
 }
@@ -837,6 +838,11 @@ type User {
   contacts: [UserContact!]!
   createdAt: Timestamp!
   defaultAccount: Account!
+
+  """
+  User's email address. Can only be set once and may be null if not set.
+  """
+  email: String
   id: ID!
 
   """
@@ -937,6 +943,15 @@ input UserRequestAuthCodeInput {
 }
 
 union UserUpdate = IntraLedgerUpdate | LnUpdate | OnChainUpdate | Price
+
+input UserUpdateEmailInput {
+  email: String
+}
+
+type UserUpdateEmailPayload {
+  errors: [Error!]!
+  user: User
+}
 
 input UserUpdateLanguageInput {
   language: Language!

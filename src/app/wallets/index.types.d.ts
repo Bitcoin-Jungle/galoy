@@ -99,3 +99,7 @@ type IntraLedgerPaymentSendArgs = PaymentSendArgs & {
 type IntraLedgerPaymentSendWithTwoFAArgs = IntraLedgerPaymentSendArgs & {
   twoFAToken: TwoFAToken
 }
+
+type UpdateEmailArgs = {
+  email: string | null
+}
