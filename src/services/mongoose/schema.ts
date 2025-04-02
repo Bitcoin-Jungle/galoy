@@ -181,8 +181,8 @@ const UserSchema = new Schema<UserType>({
     type: String,
     index: {
       unique: true,
-      sparse: true,
       collation: { locale: "en", strength: 2 },
+      partialFilterExpression: { email: { $type: "string" } },
     },
   },
   deviceToken: {
