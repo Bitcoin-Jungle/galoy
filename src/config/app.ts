@@ -220,6 +220,7 @@ type TwilioConfig = {
   apiKey: string
   apiSecret: string
   twilioPhoneNumber: string
+  twilioWhatsappContentSid: string
 }
 
 export const getTwilioConfig = (): TwilioConfig => {
@@ -227,8 +228,9 @@ export const getTwilioConfig = (): TwilioConfig => {
   const apiKey = process.env.TWILIO_API_KEY
   const apiSecret = process.env.TWILIO_API_SECRET
   const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER
+  const twilioWhatsappContentSid = process.env.TWILIO_WHATSAPP_CONTENT_SID
 
-  if (!accountSid || !apiKey || !apiSecret || !twilioPhoneNumber) {
+  if (!accountSid || !apiKey || !apiSecret || !twilioPhoneNumber || !twilioWhatsappContentSid) {
     throw new ConfigError("missing key for twilio")
   }
 
@@ -237,6 +239,7 @@ export const getTwilioConfig = (): TwilioConfig => {
     apiKey,
     apiSecret,
     twilioPhoneNumber,
+    twilioWhatsappContentSid,
   }
 }
 
