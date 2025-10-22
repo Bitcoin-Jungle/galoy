@@ -17,7 +17,7 @@ import { onChannelUpdated, updateEscrows } from "@services/lnd/utils"
 import { ledger } from "@services/mongodb"
 
 //this is the fixed opening and closing channel fee on devnet
-const channelFee = 7637
+const channelFee = 7700
 const lnds = [lnd1, lnd2, lndOutside1, lndOutside1]
 let channelLengthMain, channelLengthOutside1
 

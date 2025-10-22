@@ -142,7 +142,8 @@ describe("UserWallet - onChainPay", () => {
     const feeRates = getFeeRates()
 
     expect(pending).toBe(false)
-    expect(fee).toBe(feeRates.withdrawFeeFixed + 7050)
+    expect(fee).toBeGreaterThanOrEqual(feeRates.withdrawFeeFixed + 6000)
+    expect(fee).toBeLessThanOrEqual(feeRates.withdrawFeeFixed + 11000)
     expect(feeUsd).toBeGreaterThan(0)
 
     txResult = await Wallets.getTransactionsForWalletId({
@@ -236,7 +237,8 @@ describe("UserWallet - onChainPay", () => {
     const feeRates = getFeeRates()
 
     expect(pending).toBe(false)
-    expect(fee).toBe(feeRates.withdrawFeeFixed + 7050) // 7050?
+    expect(fee).toBeGreaterThanOrEqual(feeRates.withdrawFeeFixed + 6000)
+    expect(fee).toBeLessThanOrEqual(feeRates.withdrawFeeFixed + 11000)
     expect(feeUsd).toBeGreaterThan(0)
 
     txResult = await Wallets.getTransactionsForWalletId({

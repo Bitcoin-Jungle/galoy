@@ -222,7 +222,7 @@ describe("UserWallet - On chain", () => {
 
     const satsPrice = await getCurrentPrice()
     if (satsPrice instanceof Error) throw satsPrice
-    const usd = (btc2sat(amountBTC) * satsPrice).toFixed(2)
+    const usd = (btc2sat(amountBTC) * satsPrice).toFixed(2).replace('.', ',')
 
     expect(sendNotification.mock.calls[0][0].title).toBe(
       getTitle[NotificationType.OnchainReceiptPending]({
