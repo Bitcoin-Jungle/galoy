@@ -17,29 +17,24 @@ All requests are HTTP `POST` with `Content-Type: application/json`, body shape `
 
 The GraphQL schema (source of truth) lives at `src/graphql/main/schema.graphql` in this repo. A Postman collection ships at `src/graphql/main/docs/Lightning-Integration.postman_collection.json`.
 
-## Authentication
+## Authentication — JWT only
 
-Two auth schemes exist. **Pick one per integration**:
+Every authenticated request uses `Authorization: Bearer <jwt>`. The JWT is obtained via a one-time SMS auth-code flow tied to a phone number.
 
-| Scheme | Header | When to use |
-| --- | --- | --- |
-| JWT Bearer (user-scoped) | `Authorization: Bearer <jwt>` | Full access. Required for `me`, account API key management, settings, etc. |
-| API key (account-scoped) | `Authorization: Basic <base64(key:secret)>` | Server-to-server integrations. Limited to send/receive/wallet ops — see below. |
-
-API keys can ONLY be used for these mutations: `lnInvoiceCreate`, `lnNoAmountInvoiceCreate`, `lnInvoicePaymentSend`, `lnNoAmountInvoicePaymentSend`, `intraLedgerPaymentSend`, `onChainAddressCreate`, `onChainAddressCurrent`, `onChainPaymentSend`, `onChainPaymentSendAll`, `lnInvoiceFeeProbe`, `lnNoAmountInvoiceFeeProbe`. They CANNOT call `me`, so the integration must cache the `walletId` after creation.
-
-### Step 1 — Get a JWT (one-time, requires phone)
+### Step 1 — Request an SMS auth code
 
 ```bash
-# 1. Request SMS auth code
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
   -d '{
     "query": "mutation($input: UserRequestAuthCodeInput!){ userRequestAuthCode(input:$input){ success errors{ message } } }",
     "variables": { "input": { "phone": "+15065551234" } }
   }'
+```
 
-# 2. Exchange code for JWT
+### Step 2 — Exchange code for JWT
+
+```bash
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
   -d '{
@@ -49,36 +44,15 @@ curl -s https://api.mainnet.bitcoinjungle.app/graphql \
 # → { "data": { "userLogin": { "authToken": "eyJhbGc...", "errors": [] } } }
 ```
 
-Store the `authToken` and use it as `Authorization: Bearer <authToken>` for subsequent calls.
-
-### Step 2 — (Recommended for servers) Mint an API key
-
-With the JWT, create an account-scoped key. The plaintext `secret` is returned **once** — store it immediately.
+Store `authToken` and pass it as `Authorization: Bearer <authToken>` on every subsequent call.
 
 ```bash
 JWT="eyJhbGc..."
-EXPIRE_AT=$(($(date +%s) + 60*60*24*365))   # 1 year
-
-curl -s https://api.mainnet.bitcoinjungle.app/graphql \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $JWT" \
-  -d "{
-    \"query\": \"mutation(\$input: AccountApiKeyCreateInput!){ accountApiKeyCreate(input:\$input){ accountApiKey{ key secret label expireAt } errors{ message } } }\",
-    \"variables\": { \"input\": { \"label\": \"my-bot\", \"expireAt\": $EXPIRE_AT } }
-  }"
-```
-
-Use it on every subsequent request:
-
-```bash
-API_KEY="..."; API_SECRET="..."
-AUTH=$(printf "%s:%s" "$API_KEY" "$API_SECRET" | base64 -w0)
-# → Authorization: Basic $AUTH
 ```
 
 ### Step 3 — Find the walletId
 
-`walletId` is required by every send/receive mutation. Fetch it once (with the JWT, since `me` is JWT-only) and cache it.
+`walletId` is required by every send/receive mutation. Fetch it once and cache it.
 
 ```bash
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
@@ -96,7 +70,7 @@ The default BTC wallet's `id` is the `walletId` to use everywhere below.
 ```bash
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Basic $AUTH" \
+  -H "Authorization: Bearer $JWT" \
   -d '{
     "query": "mutation($input: LnInvoiceCreateInput!){ lnInvoiceCreate(input:$input){ invoice{ paymentRequest paymentHash satoshis } errors{ message } } }",
     "variables": { "input": { "walletId": "WALLET_ID", "amount": 1000, "memo": "order #42" } }
@@ -113,7 +87,7 @@ For a no-amount ("any-amount") invoice, use `lnNoAmountInvoiceCreate` with the s
 # Generate a fresh address
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Basic $AUTH" \
+  -H "Authorization: Bearer $JWT" \
   -d '{
     "query": "mutation($input: OnChainAddressCreateInput!){ onChainAddressCreate(input:$input){ address errors{ message } } }",
     "variables": { "input": { "walletId": "WALLET_ID" } }
@@ -133,7 +107,7 @@ Optional but recommended: probe the route fee first so the user sees the cost be
 # (Optional) fee probe
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Basic $AUTH" \
+  -H "Authorization: Bearer $JWT" \
   -d '{
     "query": "mutation($input: LnInvoiceFeeProbeInput!){ lnInvoiceFeeProbe(input:$input){ amount errors{ message } } }",
     "variables": { "input": { "walletId": "WALLET_ID", "paymentRequest": "lnbc..." } }
@@ -142,7 +116,7 @@ curl -s https://api.mainnet.bitcoinjungle.app/graphql \
 # Send
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Basic $AUTH" \
+  -H "Authorization: Bearer $JWT" \
   -d '{
     "query": "mutation($input: LnInvoicePaymentInput!){ lnInvoicePaymentSend(input:$input){ status errors{ message } } }",
     "variables": { "input": { "walletId": "WALLET_ID", "paymentRequest": "lnbc...", "memo": "tip" } }
@@ -159,7 +133,7 @@ For a no-amount invoice, use `lnNoAmountInvoicePaymentSend` and include `amount`
 # (Optional) fee estimate — query, not mutation
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Basic $AUTH" \
+  -H "Authorization: Bearer $JWT" \
   -d '{
     "query": "query($walletId: WalletId!, $address: OnChainAddress!, $amount: SatAmount!){ onChainTxFee(walletId:$walletId, address:$address, amount:$amount, targetConfirmations:1){ amount targetConfirmations } }",
     "variables": { "walletId": "WALLET_ID", "address": "bc1q...", "amount": 50000 }
@@ -168,7 +142,7 @@ curl -s https://api.mainnet.bitcoinjungle.app/graphql \
 # Send
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Basic $AUTH" \
+  -H "Authorization: Bearer $JWT" \
   -d '{
     "query": "mutation($input: OnChainPaymentSendInput!){ onChainPaymentSend(input:$input){ status errors{ message } } }",
     "variables": { "input": { "walletId": "WALLET_ID", "address": "bc1q...", "amount": 50000, "memo": "withdrawal", "targetConfirmations": 1 } }
@@ -184,7 +158,7 @@ If you know the recipient's `walletId` (look it up via `userDefaultWalletId(user
 ```bash
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Basic $AUTH" \
+  -H "Authorization: Bearer $JWT" \
   -d '{
     "query": "mutation($input: IntraLedgerPaymentSendInput!){ intraLedgerPaymentSend(input:$input){ status errors{ message } } }",
     "variables": { "input": { "walletId": "WALLET_ID", "recipientWalletId": "RECIPIENT_WALLET_ID", "amount": 1000, "memo": "thanks" } }
@@ -195,7 +169,7 @@ curl -s https://api.mainnet.bitcoinjungle.app/graphql \
 
 ### Receiving — was my invoice paid?
 
-**Option A: Polling (simple, works with any HTTP client).** Hit `lnInvoicePaymentStatus` (subscription field) via a regular query is NOT supported — instead poll the wallet transaction list and match by `paymentHash`:
+**Option A: Polling (simple, works with any HTTP client).** Poll the wallet transaction list and match by `paymentHash`:
 
 ```bash
 curl -s https://api.mainnet.bitcoinjungle.app/graphql \
@@ -218,7 +192,7 @@ subscription($input: LnInvoicePaymentStatusInput!) {
 # variables: { "input": { "paymentRequest": "lnbc..." } }
 ```
 
-For broader account-wide push notifications (any LN/onchain/intraledger update), use the `myUpdates` subscription instead. Subscriptions require JWT auth — they don't accept API keys.
+For broader account-wide push notifications (any LN/onchain/intraledger update), use the `myUpdates` subscription instead.
 
 ### Sending — did my payment go through?
 
@@ -252,13 +226,15 @@ curl -s https://api.mainnet.bitcoinjungle.app/graphql \
 
 ```js
 const ENDPOINT = "https://api.mainnet.bitcoinjungle.app/graphql"
+const JWT = process.env.BJ_JWT
+const WALLET_ID = process.env.BJ_WALLET_ID
 
-const gql = async (query, variables, auth) => {
+const gql = async (query, variables) => {
   const r = await fetch(ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(auth ? { Authorization: auth } : {}),
+      Authorization: `Bearer ${JWT}`,
     },
     body: JSON.stringify({ query, variables }),
   })
@@ -267,15 +243,11 @@ const gql = async (query, variables, auth) => {
   return j.data
 }
 
-const basic = (key, secret) =>
-  "Basic " + Buffer.from(`${key}:${secret}`).toString("base64")
-
 // Receive 1000 sats over Lightning
 const { lnInvoiceCreate } = await gql(
   `mutation($i: LnInvoiceCreateInput!){
      lnInvoiceCreate(input:$i){ invoice{ paymentRequest paymentHash } errors{ message } } }`,
   { i: { walletId: WALLET_ID, amount: 1000, memo: "order #42" } },
-  basic(API_KEY, API_SECRET),
 )
 const { paymentRequest, paymentHash } = lnInvoiceCreate.invoice
 
@@ -284,7 +256,6 @@ const { lnInvoicePaymentSend } = await gql(
   `mutation($i: LnInvoicePaymentInput!){
      lnInvoicePaymentSend(input:$i){ status errors{ message } } }`,
   { i: { walletId: WALLET_ID, paymentRequest: "lnbc..." } },
-  basic(API_KEY, API_SECRET),
 )
 console.log(lnInvoicePaymentSend.status) // SUCCESS | PENDING | FAILURE | ALREADY_PAID
 ```
@@ -293,9 +264,8 @@ console.log(lnInvoicePaymentSend.status) // SUCCESS | PENDING | FAILURE | ALREAD
 
 - **Phone format**: E.164 only (e.g. `+15065551234`).
 - **Amounts are in sats** (`SatAmount`). Never floats. `balance` may be negative on a `SignedAmount` field — it's the same unit.
-- **One JWT per phone**: the JWT is tied to a user account; one phone = one account.
+- **One JWT per phone**: the JWT is tied to a user account; one phone = one account. JWTs don't auto-rotate — when one expires, run the auth-code flow again.
 - **Errors**: GraphQL responses always return HTTP 200. Check both top-level `errors` (parse/validation/auth failures) AND payload-level `errors[]` (business-logic failures like `INSUFFICENT_BALANCE`).
 - **Idempotency**: there is no idempotency key on send mutations. If a request times out, **don't blindly retry** — first poll the transaction list to see whether it landed.
 - **Rate limits**: auth code requests, login attempts, and payments are rate-limited per phone/IP. Back off on 429-style failures rather than tight-looping.
-- **API-key scope**: API keys can't read `me` or transaction history — keep a JWT around (or store the `walletId` and confirm via subscription) if your bot needs to verify receipts.
 - **Confirm before declaring success**: `PENDING` means in-flight, not failed. A Lightning HTLC can resolve seconds later; an on-chain tx flips to `SUCCESS` after `targetConfirmations` blocks.
