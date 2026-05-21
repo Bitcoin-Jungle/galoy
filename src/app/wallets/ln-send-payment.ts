@@ -528,11 +528,24 @@ const executePaymentViaLn = async ({
     if (settled instanceof Error) return settled
 
     if (payResult instanceof Error) {
+      // Recovered from prod image us.gcr.io/galoy-pura-vida/galoy@sha256:880c99a85...
+      // built 2025-06-14. This conditional-void block was running in prod but never
+      // committed to git. Preserved here on 2026-05-21 to keep main in sync with prod.
+      // NOTE: settlePendingLnPayments above likely makes previouslyRecorded always true
+      // in practice, so this may be a no-op vs. the simpler unconditional void. Kept
+      // for safety; revisit with a test before simplifying.
+      if (payResult instanceof LnAlreadyPaidError) {
+        const previouslyRecorded = await ledgerService.isLnTxRecorded(paymentHash)
+        if (previouslyRecorded instanceof Error) return previouslyRecorded
+        if (previouslyRecorded) {
+          const voided = await ledgerService.voidLedgerTransactionsForJournal(journalId)
+          if (voided instanceof Error) return voided
+        }
+        return PaymentSendStatus.AlreadyPaid
+      }
+
       const voided = await ledgerService.voidLedgerTransactionsForJournal(journalId)
       if (voided instanceof Error) return voided
-
-      if (payResult instanceof LnAlreadyPaidError) return PaymentSendStatus.AlreadyPaid
-
       return payResult
     }
 
