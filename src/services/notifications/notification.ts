@@ -56,9 +56,7 @@ export const sendNotification = async ({
 
   logger.info({ message, user }, "sending notification")
 
-  const validTokens = user.deviceToken.filter((token) => token.length === 163)
-
-  for (const token of validTokens) {
+  for (const token of user.deviceToken) {
     try {
       const response = await admin.messaging().send({
         token,
