@@ -1,39 +1,36 @@
 import { GT } from "@graphql/index"
 import Username from "@graphql/types/scalar/username"
-import ContactAlias from "@graphql/types/scalar/contact-alias"
 import LightningAddress from "@graphql/types/scalar/lightning-address"
 
 import * as Users from "@app/users"
-import UserContactUpdateAliasPayload from "@graphql/types/payload/user-contact-update-alias"
+import UserContactDeletePayload from "@graphql/types/payload/user-contact-delete"
 
-const UserContactUpdateAliasInput = new GT.Input({
-  name: "UserContactUpdateAliasInput",
+const UserContactDeleteInput = new GT.Input({
+  name: "UserContactDeleteInput",
   fields: () => ({
     username: { type: Username },
     lightningAddress: { type: LightningAddress },
-    alias: { type: GT.NonNull(ContactAlias) },
   }),
 })
 
-const USerContactUpdateAliasMutation = GT.Field({
-  type: GT.NonNull(UserContactUpdateAliasPayload),
+const UserContactDeleteMutation = GT.Field({
+  type: GT.NonNull(UserContactDeletePayload),
   args: {
-    input: { type: GT.NonNull(UserContactUpdateAliasInput) },
+    input: { type: GT.NonNull(UserContactDeleteInput) },
   },
   resolve: async (_, args, { uid }) => {
-    const { username, lightningAddress, alias } = args.input
+    const { username, lightningAddress } = args.input
 
-    for (const input of [username, lightningAddress, alias]) {
+    for (const input of [username, lightningAddress]) {
       if (input instanceof Error) {
         return { errors: [{ message: input.message }] }
       }
     }
 
-    const contact = await Users.updateContactAlias({
+    const contact = await Users.deleteContact({
       userId: uid as UserId,
       username,
       lightningAddress,
-      alias,
     })
 
     if (contact instanceof Error) {
@@ -47,4 +44,4 @@ const USerContactUpdateAliasMutation = GT.Field({
   },
 })
 
-export default USerContactUpdateAliasMutation
+export default UserContactDeleteMutation

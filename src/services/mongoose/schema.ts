@@ -220,6 +220,10 @@ const UserSchema = new Schema<UserType>({
           type: String,
           collation: { locale: "en", strength: 2 },
         },
+        lightningAddress: {
+          type: String,
+          collation: { locale: "en", strength: 2 },
+        },
         name: String,
         transactionsCount: {
           type: Number,

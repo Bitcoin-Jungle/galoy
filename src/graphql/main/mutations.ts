@@ -20,6 +20,8 @@ import UserRequestAuthCodeMutation from "@graphql/root/mutation/user-request-aut
 import UserUpdateLanguageMutation from "@graphql/root/mutation/user-update-language"
 import UserUpdateUsernameMutation from "@graphql/root/mutation/user-update-username"
 import UserUpdateEmailMutation from "@graphql/root/mutation/user-update-email"
+import UserContactAddMutation from "@graphql/root/mutation/user-contact-add"
+import UserContactDeleteMutation from "@graphql/root/mutation/user-contact-delete"
 import UserContactUpdateAliasMutation from "@graphql/root/mutation/user-contact-update-alias"
 import UserQuizQuestionUpdateCompletedMutation from "@graphql/root/mutation/user-quiz-question-update-completed"
 import OnChainPaymentSendMutation from "@graphql/root/mutation/onchain-payment-send"
@@ -55,6 +57,8 @@ const MutationType = new GT.Object({
     userUpdateLanguage: UserUpdateLanguageMutation,
     userUpdateUsername: UserUpdateUsernameMutation,
     userUpdateEmail: UserUpdateEmailMutation,
+    userContactAdd: UserContactAddMutation,
+    userContactDelete: UserContactDeleteMutation,
     userContactUpdateAlias: UserContactUpdateAliasMutation,
 
     lnInvoiceFeeProbe: LnInvoiceFeeProbeMutation,
@@ -79,7 +83,7 @@ const MutationType = new GT.Object({
 
     captchaCreateChallenge: CaptchaCreateChallengeMutation,
     captchaRequestAuthCode: CaptchaRequestAuthCodeMutation,
-    
+
     boltCardRegister: BoltCardRegisterMutation,
     boltCardUpdate: BoltCardUpdateMutation,
     boltCardDisable: BoltCardDisableMutation,

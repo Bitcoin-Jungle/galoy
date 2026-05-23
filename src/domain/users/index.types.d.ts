@@ -13,6 +13,12 @@ type DeviceToken = string & { [deviceTokenSymbol]: never }
 declare const contactAliasSymbol: unique symbol
 type ContactAlias = string & { [contactAliasSymbol]: never }
 
+declare const lightningAddressSymbol: unique symbol
+type LightningAddress = string & { [lightningAddressSymbol]: never }
+
+declare const contactIdSymbol: unique symbol
+type ContactId = string & { [contactIdSymbol]: never }
+
 declare const quizQuestionIdSymbol: unique symbol
 type QuizQuestionId = string & { [quizQuestionIdSymbol]: never }
 
@@ -20,8 +26,9 @@ declare const emailSymbol: unique symbol
 type Email = string & { [emailSymbol]: never }
 
 type UserContact = {
-  readonly id: Username
-  readonly username: Username
+  readonly id: ContactId
+  readonly username?: Username
+  readonly lightningAddress?: LightningAddress
   alias: ContactAlias
   transactionsCount: number
 }

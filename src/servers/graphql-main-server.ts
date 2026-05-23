@@ -28,6 +28,8 @@ export async function startApolloServerForCoreSchema() {
       Mutation: {
         userQuizQuestionUpdateCompleted: isAuthenticated,
         userUpdateLanguage: isAuthenticated,
+        userContactAdd: isAuthenticated,
+        userContactDelete: isAuthenticated,
         userContactUpdateAlias: isAuthenticated,
 
         twoFAGenerate: isAuthenticated,

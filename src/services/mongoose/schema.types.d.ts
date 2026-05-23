@@ -39,6 +39,7 @@ type CurrencyObjectForUser = {
 
 type ContactObjectForUser = {
   id?: string
+  lightningAddress?: string
   name?: string
   transactionsCount: number
 }

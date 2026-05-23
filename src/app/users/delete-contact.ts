@@ -2,16 +2,14 @@ import { UsersRepository } from "@services/mongoose"
 import { ValidationError } from "@domain/errors"
 import { checkedToLightningAddress } from "@domain/users"
 
-export const updateContactAlias = async ({
+export const deleteContact = async ({
   userId,
   username,
   lightningAddress,
-  alias,
 }: {
   userId: UserId
-  username?: string
+  username?: Username
   lightningAddress?: string
-  alias: string
 }): Promise<UserContact | ApplicationError> => {
   if (!username && !lightningAddress) {
     return new ValidationError("Contact username or lightning address required")
@@ -28,28 +26,25 @@ export const updateContactAlias = async ({
     return normalizedLightningAddress
   }
 
-  const repo = UsersRepository()
-  const user = await repo.findById(userId)
-  if (user instanceof Error) {
-    return user
-  }
+  const usersRepo = UsersRepository()
+  const user = await usersRepo.findById(userId)
+  if (user instanceof Error) return user
 
-  const contact = user.contacts.find((contact) =>
+  const contactIndex = user.contacts.findIndex((contact) =>
     username
       ? contact.username?.toLocaleLowerCase() === username.toLocaleLowerCase()
       : contact.lightningAddress === normalizedLightningAddress,
   )
-  if (!contact) {
+  if (contactIndex < 0) {
     return new ValidationError(
       `User doesn't have contact ${username || lightningAddress}`,
     )
   }
-  contact.alias = alias as ContactAlias
 
-  const result = await repo.update(user)
-  if (result instanceof Error) {
-    return result
-  }
+  const [contact] = user.contacts.splice(contactIndex, 1)
+
+  const updateResult = await usersRepo.update(user)
+  if (updateResult instanceof Error) return updateResult
 
   return contact
 }

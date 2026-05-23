@@ -308,6 +308,11 @@ enum InvoicePaymentStatus {
 
 scalar Language
 
+"""
+A lightning address in local@domain format.
+"""
+scalar LightningAddress
+
 type LnInvoice {
   paymentHash: PaymentHash!
   paymentRequest: LnPaymentRequest!
@@ -459,6 +464,8 @@ type Mutation {
   twoFADelete(input: TwoFADeleteInput!): SuccessPayload!
   twoFAGenerate: TwoFAGeneratePayload!
   twoFASave(input: TwoFASaveInput!): SuccessPayload!
+  userContactAdd(input: UserContactAddInput!): UserContactAddPayload!
+  userContactDelete(input: UserContactDeleteInput!): UserContactDeletePayload!
   userContactUpdateAlias(
     input: UserContactUpdateAliasInput!
   ): UserContactUpdateAliasPayload!
@@ -874,7 +881,12 @@ type UserContact {
   Only the user can see the alias attached to their contact.
   """
   alias: ContactAlias
-  id: Username!
+  id: ID!
+
+  """
+  Lightning address for external contacts.
+  """
+  lightningAddress: LightningAddress
 
   """
   Paginated list of transactions sent to/from this contact.
@@ -903,14 +915,36 @@ type UserContact {
   transactionsCount: Int!
 
   """
-  Actual identifier of the contact.
+  Galoy username for internal contacts.
   """
-  username: Username!
+  username: Username
+}
+
+input UserContactAddInput {
+  alias: ContactAlias
+  lightningAddress: LightningAddress
+  username: Username
+}
+
+type UserContactAddPayload {
+  contact: UserContact
+  errors: [Error!]!
+}
+
+input UserContactDeleteInput {
+  lightningAddress: LightningAddress
+  username: Username
+}
+
+type UserContactDeletePayload {
+  contact: UserContact
+  errors: [Error!]!
 }
 
 input UserContactUpdateAliasInput {
   alias: ContactAlias!
-  username: Username!
+  lightningAddress: LightningAddress
+  username: Username
 }
 
 type UserContactUpdateAliasPayload {

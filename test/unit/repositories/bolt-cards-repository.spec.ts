@@ -39,6 +39,8 @@ describe("BoltCardsRepository", () => {
     k0: "0123456789abcdef0123456789abcdef",
     k1: "0123456789abcdef0123456789abcdef",
     k2: "0123456789abcdef0123456789abcdef",
+    k3: "0123456789abcdef0123456789abcdef",
+    k4: "0123456789abcdef0123456789abcdef",
     counter: 0,
     enabled: true,
     txLimit: 100000,
@@ -102,6 +104,8 @@ describe("BoltCardsRepository", () => {
         k0: "0123456789abcdef0123456789abcdef",
         k1: "0123456789abcdef0123456789abcdef",
         k2: "0123456789abcdef0123456789abcdef",
+        k3: "0123456789abcdef0123456789abcdef",
+        k4: "0123456789abcdef0123456789abcdef",
       }
       
       const result = await repository.save(input)
@@ -155,20 +159,35 @@ describe("BoltCardsRepository", () => {
 
   describe("getDailyCardUsage", () => {
     it("calculates daily card usage", async () => {
-      mockCardUsageModel.aggregate.mockResolvedValue([{ total: 250000 }])
+      const usage = {
+        _id: "bolt-card-usage:123",
+        cardId: "bolt-card:123",
+        amount: 250000,
+        oldCounter: 0,
+        newCounter: 1,
+        spent: true,
+        createdAt: new Date(),
+      }
+      mockLean.mockResolvedValue([usage])
       
       const result = await repository.getDailyCardUsage("bolt-card:123")
       
-      expect(mockCardUsageModel.aggregate).toHaveBeenCalled()
-      expect(result).toBe(250000)
+      expect(mockCardUsageModel.find).toHaveBeenCalled()
+      expect(result).toEqual([
+        expect.objectContaining({
+          id: usage._id,
+          amount: usage.amount,
+          spent: usage.spent,
+        }),
+      ])
     })
     
     it("returns 0 if no usage found", async () => {
-      mockCardUsageModel.aggregate.mockResolvedValue([])
+      mockLean.mockResolvedValue([])
       
       const result = await repository.getDailyCardUsage("bolt-card:123")
       
-      expect(result).toBe(0)
+      expect(result).toEqual([])
     })
   })
 })

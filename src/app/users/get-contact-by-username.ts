@@ -8,7 +8,7 @@ export const getContactByUsername = async ({
   contactUsername: string
 }): Promise<UserContact | ApplicationError> => {
   const contact = user.contacts.find(
-    (contact) => contact.username.toLocaleLowerCase() === contactUsername,
+    (contact) => contact.username?.toLocaleLowerCase() === contactUsername,
   )
   if (!contact) {
     return new NoContactForUsernameError()

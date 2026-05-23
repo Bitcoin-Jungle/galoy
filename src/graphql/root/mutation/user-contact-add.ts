@@ -4,21 +4,21 @@ import ContactAlias from "@graphql/types/scalar/contact-alias"
 import LightningAddress from "@graphql/types/scalar/lightning-address"
 
 import * as Users from "@app/users"
-import UserContactUpdateAliasPayload from "@graphql/types/payload/user-contact-update-alias"
+import UserContactAddPayload from "@graphql/types/payload/user-contact-add"
 
-const UserContactUpdateAliasInput = new GT.Input({
-  name: "UserContactUpdateAliasInput",
+const UserContactAddInput = new GT.Input({
+  name: "UserContactAddInput",
   fields: () => ({
     username: { type: Username },
     lightningAddress: { type: LightningAddress },
-    alias: { type: GT.NonNull(ContactAlias) },
+    alias: { type: ContactAlias },
   }),
 })
 
-const USerContactUpdateAliasMutation = GT.Field({
-  type: GT.NonNull(UserContactUpdateAliasPayload),
+const UserContactAddMutation = GT.Field({
+  type: GT.NonNull(UserContactAddPayload),
   args: {
-    input: { type: GT.NonNull(UserContactUpdateAliasInput) },
+    input: { type: GT.NonNull(UserContactAddInput) },
   },
   resolve: async (_, args, { uid }) => {
     const { username, lightningAddress, alias } = args.input
@@ -29,7 +29,7 @@ const USerContactUpdateAliasMutation = GT.Field({
       }
     }
 
-    const contact = await Users.updateContactAlias({
+    const contact = await Users.addContact({
       userId: uid as UserId,
       username,
       lightningAddress,
@@ -47,4 +47,4 @@ const USerContactUpdateAliasMutation = GT.Field({
   },
 })
 
-export default USerContactUpdateAliasMutation
+export default UserContactAddMutation

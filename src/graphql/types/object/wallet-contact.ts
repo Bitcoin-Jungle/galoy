@@ -8,15 +8,20 @@ import * as Wallets from "@app/wallets"
 import ContactAlias from "../scalar/contact-alias"
 import * as Accounts from "@app/accounts"
 import Username from "../scalar/username"
+import LightningAddress from "../scalar/lightning-address"
 import { checkedToUsername } from "@domain/users"
 
 const UserContact = new GT.Object({
   name: "UserContact",
   fields: () => ({
-    id: { type: GT.NonNull(Username) },
+    id: { type: GT.NonNull(GT.ID) },
     username: {
-      type: GT.NonNull(Username),
-      description: "Actual identifier of the contact.",
+      type: Username,
+      description: "Galoy username for internal contacts.",
+    },
+    lightningAddress: {
+      type: LightningAddress,
+      description: "Lightning address for external contacts.",
     },
     alias: {
       type: ContactAlias,
@@ -30,6 +35,10 @@ const UserContact = new GT.Object({
       type: TransactionConnection,
       args: connectionArgs,
       resolve: async (source, args, { domainUser }) => {
+        if (!source.username) {
+          return connectionFromArray([], args)
+        }
+
         const contactUsername = checkedToUsername(source.username)
 
         if (contactUsername instanceof Error) {

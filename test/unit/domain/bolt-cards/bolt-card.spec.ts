@@ -20,6 +20,8 @@ describe("Bolt Card", () => {
     k0: "0123456789abcdef0123456789abcdef",
     k1: "0123456789abcdef0123456789abcdef",
     k2: "0123456789abcdef0123456789abcdef",
+    k3: "0123456789abcdef0123456789abcdef",
+    k4: "0123456789abcdef0123456789abcdef",
   }
   
   describe("createBoltCard", () => {
@@ -136,7 +138,7 @@ describe("Bolt Card", () => {
       
       // Should not throw
       expect(() => {
-        validateCardTransaction(card, 50000, 100000)
+        validateCardTransaction(card, 50000, [])
       }).not.toThrow()
     })
     
@@ -145,7 +147,7 @@ describe("Bolt Card", () => {
       const disabledCard = updateBoltCard(card, { id: card.id, enabled: false })
       
       expect(() => {
-        validateCardTransaction(disabledCard, 10000, 0)
+        validateCardTransaction(disabledCard, 10000, [])
       }).toThrow(BoltCardDisabledError)
     })
     
@@ -156,10 +158,10 @@ describe("Bolt Card", () => {
       })
       
       expect(() => {
-        validateCardTransaction(card, 150000, 0)
+        validateCardTransaction(card, 150000, [])
       }).toThrow(BoltCardLimitExceededError)
       expect(() => {
-        validateCardTransaction(card, 150000, 0)
+        validateCardTransaction(card, 150000, [])
       }).toThrow(/exceeds card limit/)
     })
     
@@ -171,13 +173,24 @@ describe("Bolt Card", () => {
       })
       
       const dailyUsage = 150000
+      const dailyUsageRecords = [
+        {
+          id: "bolt-card-usage:123" as const,
+          cardId: card.id,
+          amount: dailyUsage,
+          oldCounter: 0,
+          newCounter: 1,
+          spent: true,
+          createdAt: new Date(),
+        },
+      ]
       
       expect(() => {
-        validateCardTransaction(card, 75000, dailyUsage)
+        validateCardTransaction(card, 75000, dailyUsageRecords)
       }).toThrow(BoltCardLimitExceededError)
       expect(() => {
-        validateCardTransaction(card, 75000, dailyUsage)
-      }).toThrow(/Daily limit.*would be exceeded/)
+        validateCardTransaction(card, 75000, dailyUsageRecords)
+      }).toThrow(/would exceed daily limit/)
     })
   })
   
