@@ -19,6 +19,9 @@ import UserLoginMutation from "@graphql/root/mutation/user-login"
 import UserRequestAuthCodeMutation from "@graphql/root/mutation/user-request-auth-code"
 import UserUpdateLanguageMutation from "@graphql/root/mutation/user-update-language"
 import UserUpdateUsernameMutation from "@graphql/root/mutation/user-update-username"
+import UserUpdateEmailMutation from "@graphql/root/mutation/user-update-email"
+import UserContactAddMutation from "@graphql/root/mutation/user-contact-add"
+import UserContactDeleteMutation from "@graphql/root/mutation/user-contact-delete"
 import UserContactUpdateAliasMutation from "@graphql/root/mutation/user-contact-update-alias"
 import UserQuizQuestionUpdateCompletedMutation from "@graphql/root/mutation/user-quiz-question-update-completed"
 import OnChainPaymentSendMutation from "@graphql/root/mutation/onchain-payment-send"
@@ -27,6 +30,13 @@ import CaptchaRequestAuthCodeMutation from "@graphql/root/mutation/captcha-reque
 import CaptchaCreateChallengeMutation from "@graphql/root/mutation/captcha-create-challenge"
 import AccountApiKeyCreateMutation from "@graphql/root/mutation/account-api-key-create"
 import AccountApiKeyDisableMutation from "@graphql/root/mutation/account-api-key-disable"
+import BoltCardRegisterMutation from "@graphql/root/mutation/bolt-card-register"
+import BoltCardUpdateMutation from "@graphql/root/mutation/bolt-card-update"
+import BoltCardDisableMutation from "@graphql/root/mutation/bolt-card-disable"
+import BoltCardWithdrawRequestMutation from "@graphql/root/mutation/bolt-card-withdraw-request"
+import BoltCardWithdrawCallbackMutation from "@graphql/root/mutation/bolt-card-withdraw-callback"
+import BoltCardPairMutation from "@graphql/root/mutation/bolt-card-pair"
+import BoltCardGenerateOtpMutation from "@graphql/root/mutation/bolt-card-generate-otp"
 
 const MutationType = new GT.Object({
   name: "Mutation",
@@ -46,6 +56,9 @@ const MutationType = new GT.Object({
 
     userUpdateLanguage: UserUpdateLanguageMutation,
     userUpdateUsername: UserUpdateUsernameMutation,
+    userUpdateEmail: UserUpdateEmailMutation,
+    userContactAdd: UserContactAddMutation,
+    userContactDelete: UserContactDeleteMutation,
     userContactUpdateAlias: UserContactUpdateAliasMutation,
 
     lnInvoiceFeeProbe: LnInvoiceFeeProbeMutation,
@@ -70,6 +83,14 @@ const MutationType = new GT.Object({
 
     captchaCreateChallenge: CaptchaCreateChallengeMutation,
     captchaRequestAuthCode: CaptchaRequestAuthCodeMutation,
+
+    boltCardRegister: BoltCardRegisterMutation,
+    boltCardUpdate: BoltCardUpdateMutation,
+    boltCardDisable: BoltCardDisableMutation,
+    boltCardWithdrawRequest: BoltCardWithdrawRequestMutation,
+    boltCardWithdrawCallback: BoltCardWithdrawCallbackMutation,
+    boltCardPair: BoltCardPairMutation,
+    boltCardGenerateOtp: BoltCardGenerateOtpMutation,
   }),
 })
 

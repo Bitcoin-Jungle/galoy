@@ -10,17 +10,25 @@ export const TwilioClient = (): IPhoneProviderService => {
 
   const sendText = async ({ body, to, whatsapp, logger }: SendTextArguments) => {
     const twilioPhoneNumber = getTwilioConfig().twilioPhoneNumber
+    const twilioWhatsappContentSid = getTwilioConfig().twilioWhatsappContentSid
+
+    const sendObj: any = {
+      to,
+      from: twilioPhoneNumber,
+    }
 
     if (whatsapp) {
-      to = `whatsapp:${to}`
+      sendObj.to = `whatsapp:${to}`
+      sendObj.contentSid = twilioWhatsappContentSid,
+      sendObj.contentVariables = JSON.stringify({
+        1: body.split(" ")[0],
+      })
+    } else {
+      sendObj.body = body
     }
 
     try {
-      await client.messages.create({
-        from: twilioPhoneNumber,
-        to,
-        body,
-      })
+      await client.messages.create(sendObj)
     } catch (err) {
       logger.error({ err }, "impossible to send text")
       return new UnknownPhoneProviderServiceError(err)
@@ -32,7 +40,7 @@ export const TwilioClient = (): IPhoneProviderService => {
 
   const getCarrier = async (phone: PhoneNumber) => {
     try {
-      const result = await client.lookups.phoneNumbers(phone).fetch({ type: ["carrier"] })
+      const result = await client.lookups.v1.phoneNumbers(phone).fetch({ type: ["carrier"] })
       baseLogger.info({ result }, "result carrier info")
 
       // TODO: migration to save the converted value to mongoose instead
@@ -48,7 +56,18 @@ export const TwilioClient = (): IPhoneProviderService => {
       //   countryCode: result.countryCode,
       // }
 
-      return result
+      const phoneMetadata: PhoneMetadata = {
+        carrier: {
+          error_code: result.carrier.error_code?.toString() || "",
+          mobile_country_code: result.carrier.mobile_country_code?.toString() || "",
+          mobile_network_code: result.carrier.mobile_network_code?.toString() || "",
+          name: result.carrier.name?.toString() || "",
+          type: (result.carrier.type?.toString() || "mobile") as CarrierType,
+        },
+        countryCode: result.countryCode,
+      }
+
+      return phoneMetadata
     } catch (err) {
       return new UnknownPhoneProviderServiceError(err)
     }

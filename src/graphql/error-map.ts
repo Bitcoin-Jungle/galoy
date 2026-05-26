@@ -167,11 +167,13 @@ export const mapError = (error: ApplicationError): CustomApolloError => {
     case "CouldNotFindError":
     case "ValidationError":
     case "InvalidUsername":
+    case "InvalidLightningAddress":
     case "InvalidPublicWalletId":
     case "LessThanDustThresholdError":
     case "InvalidTargetConfirmations":
     case "NoContactForUsernameError":
     case "NoWalletExistsForUserError":
+    case "EmailAlreadyExistsError":
     case "LimitsExceededError":
     case "CouldNotFindWalletFromIdError":
     case "CouldNotFindWalletFromUsernameError":

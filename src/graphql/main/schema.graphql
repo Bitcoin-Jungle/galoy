@@ -73,6 +73,116 @@ type BTCWallet implements Wallet {
   walletCurrency: WalletCurrency!
 }
 
+type BoltCard {
+  cardName: String!
+  createdAt: Timestamp!
+  dailyLimit: Int!
+  enabled: Boolean!
+  id: ID!
+  lastUsedAt: Timestamp
+  txLimit: Int!
+  uid: String!
+  updatedAt: Timestamp!
+  usages: [CardUsage!]!
+  walletId: WalletId!
+}
+
+input BoltCardDisableInput {
+  id: ID!
+}
+
+type BoltCardDisablePayload {
+  boltCard: BoltCard
+  errors: [Error!]!
+}
+
+input BoltCardGenerateOtpInput {
+  cardId: ID!
+}
+
+type BoltCardGenerateOtpPayload {
+  errors: [Error!]!
+  otp: String
+}
+
+input BoltCardLimitsInput {
+  daily: Int
+  tx: Int
+}
+
+input BoltCardPairInput {
+  baseUrl: String!
+  otp: String!
+}
+
+type BoltCardPairPayload {
+  cardName: String
+  errors: [Error!]!
+  k0: String
+  k1: String
+  k2: String
+  k3: String
+  k4: String
+  lnurlwBase: String
+  protocolName: String
+  protocolVersion: String
+}
+
+input BoltCardRegisterInput {
+  cardName: String!
+  k0: String!
+  k1: String!
+  k2: String!
+  k3: String!
+  k4: String!
+  limits: BoltCardLimitsInput
+  uid: String!
+}
+
+type BoltCardRegisterPayload {
+  boltCard: BoltCard
+  errors: [Error!]!
+}
+
+input BoltCardUpdateInput {
+  cardName: String
+  enabled: Boolean
+  id: ID!
+  limits: BoltCardLimitsInput
+}
+
+type BoltCardUpdatePayload {
+  boltCard: BoltCard
+  errors: [Error!]!
+}
+
+input BoltCardWithdrawCallbackInput {
+  k1: String!
+  pr: String!
+}
+
+type BoltCardWithdrawCallbackPayload {
+  errors: [Error!]!
+  status: String
+}
+
+input BoltCardWithdrawRequestInput {
+  baseUrl: String!
+  c: String!
+  cardId: ID!
+  p: String!
+}
+
+type BoltCardWithdrawRequestPayload {
+  callback: String
+  defaultDescription: String
+  errors: [Error!]!
+  k1: String
+  maxWithdrawable: Int
+  minWithdrawable: Int
+  tag: String
+}
+
 type CaptchaCreateChallengePayload {
   errors: [Error!]!
   result: CaptchaCreateChallengeResult
@@ -91,6 +201,16 @@ input CaptchaRequestAuthCodeInput {
   secCode: String!
   validationCode: String!
   whatsapp: Boolean = false
+}
+
+type CardUsage {
+  amount: Int!
+  createdAt: Timestamp!
+  id: ID!
+  ip: String
+  newCounter: Int!
+  oldCounter: Int!
+  userAgent: String
 }
 
 type ConsumerAccount implements Account {
@@ -187,6 +307,11 @@ enum InvoicePaymentStatus {
 }
 
 scalar Language
+
+"""
+A lightning address in local@domain format.
+"""
+scalar LightningAddress
 
 type LnInvoice {
   paymentHash: PaymentHash!
@@ -303,6 +428,17 @@ type MobileVersions {
 type Mutation {
   accountApiKeyCreate(input: AccountApiKeyCreateInput!): AccountApiKeyPayload!
   accountApiKeyDisable(input: AccountApiKeyDisableInput!): SuccessPayload!
+  boltCardDisable(input: BoltCardDisableInput!): BoltCardDisablePayload
+  boltCardGenerateOtp(input: BoltCardGenerateOtpInput!): BoltCardGenerateOtpPayload
+  boltCardPair(input: BoltCardPairInput!): BoltCardPairPayload
+  boltCardRegister(input: BoltCardRegisterInput!): BoltCardRegisterPayload
+  boltCardUpdate(input: BoltCardUpdateInput!): BoltCardUpdatePayload
+  boltCardWithdrawCallback(
+    input: BoltCardWithdrawCallbackInput!
+  ): BoltCardWithdrawCallbackPayload
+  boltCardWithdrawRequest(
+    input: BoltCardWithdrawRequestInput!
+  ): BoltCardWithdrawRequestPayload
   captchaCreateChallenge: CaptchaCreateChallengePayload!
   captchaRequestAuthCode(input: CaptchaRequestAuthCodeInput!): SuccessPayload!
   deviceNotificationTokenCreate(
@@ -328,6 +464,8 @@ type Mutation {
   twoFADelete(input: TwoFADeleteInput!): SuccessPayload!
   twoFAGenerate: TwoFAGeneratePayload!
   twoFASave(input: TwoFASaveInput!): SuccessPayload!
+  userContactAdd(input: UserContactAddInput!): UserContactAddPayload!
+  userContactDelete(input: UserContactDeleteInput!): UserContactDeletePayload!
   userContactUpdateAlias(
     input: UserContactUpdateAliasInput!
   ): UserContactUpdateAliasPayload!
@@ -336,6 +474,7 @@ type Mutation {
     input: UserQuizQuestionUpdateCompletedInput!
   ): UserQuizQuestionUpdateCompletedPayload!
   userRequestAuthCode(input: UserRequestAuthCodeInput!): SuccessPayload!
+  userUpdateEmail(input: UserUpdateEmailInput!): UserUpdateEmailPayload!
   userUpdateLanguage(input: UserUpdateLanguageInput!): UserUpdateLanguagePayload!
   userUpdateUsername(input: UserUpdateUsernameInput!): UserUpdateUsernamePayload!
 }
@@ -500,6 +639,8 @@ type PricePoint {
 
 type Query {
   accountApiKeys: [AccountApiKeyHashed]
+  boltCard(id: ID!): BoltCard
+  boltCards: [BoltCard!]!
   btcPriceList(range: PriceGraphRange!): [PricePoint]
   businessMapMarkers: [MapMarker]
   globals: Globals
@@ -704,6 +845,11 @@ type User {
   contacts: [UserContact!]!
   createdAt: Timestamp!
   defaultAccount: Account!
+
+  """
+  User's email address. Can only be set once and may be null if not set.
+  """
+  email: String
   id: ID!
 
   """
@@ -735,7 +881,12 @@ type UserContact {
   Only the user can see the alias attached to their contact.
   """
   alias: ContactAlias
-  id: Username!
+  id: ID!
+
+  """
+  Lightning address for external contacts.
+  """
+  lightningAddress: LightningAddress
 
   """
   Paginated list of transactions sent to/from this contact.
@@ -764,14 +915,36 @@ type UserContact {
   transactionsCount: Int!
 
   """
-  Actual identifier of the contact.
+  Galoy username for internal contacts.
   """
-  username: Username!
+  username: Username
+}
+
+input UserContactAddInput {
+  alias: ContactAlias
+  lightningAddress: LightningAddress
+  username: Username
+}
+
+type UserContactAddPayload {
+  contact: UserContact
+  errors: [Error!]!
+}
+
+input UserContactDeleteInput {
+  lightningAddress: LightningAddress
+  username: Username
+}
+
+type UserContactDeletePayload {
+  contact: UserContact
+  errors: [Error!]!
 }
 
 input UserContactUpdateAliasInput {
   alias: ContactAlias!
-  username: Username!
+  lightningAddress: LightningAddress
+  username: Username
 }
 
 type UserContactUpdateAliasPayload {
@@ -804,6 +977,15 @@ input UserRequestAuthCodeInput {
 }
 
 union UserUpdate = IntraLedgerUpdate | LnUpdate | OnChainUpdate | Price
+
+input UserUpdateEmailInput {
+  email: String
+}
+
+type UserUpdateEmailPayload {
+  errors: [Error!]!
+  user: User
+}
 
 input UserUpdateLanguageInput {
   language: Language!

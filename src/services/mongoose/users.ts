@@ -1,4 +1,5 @@
 import { onboardingEarn } from "@config/app"
+import { UserStatus } from "@core/user"
 import { toSats } from "@domain/bitcoin"
 import {
   CouldNotFindUserFromIdError,
@@ -34,7 +35,8 @@ export const UsersRepository = (): IUsersRepository => {
   const findByUsername = async (username: Username): Promise<User | RepositoryError> => {
     try {
       const result = await User.findOne(
-        { username: caseInsensitiveRegex(username) },
+        { username: caseInsensitiveRegex(username), status: UserStatus.Active },
+
         { lastIPs: 0, lastConnection: 0 },
       )
       if (!result) {
@@ -100,18 +102,29 @@ export const UsersRepository = (): IUsersRepository => {
     contacts,
     deviceTokens,
     twoFA,
+    email,
   }: User): Promise<User | RepositoryError> => {
     try {
       const data = {
         phone,
         language,
-        contacts: contacts.map(({ username, alias, transactionsCount }: UserContact) => ({
-          id: username,
-          name: alias,
-          transactionsCount,
-        })),
+        contacts: contacts.map(
+          ({
+            id,
+            username,
+            lightningAddress,
+            alias,
+            transactionsCount,
+          }: UserContact) => ({
+            id: username || id,
+            lightningAddress,
+            name: alias,
+            transactionsCount,
+          }),
+        ),
         deviceToken: deviceTokens,
         twoFA,
+        email,
       }
       const result = await User.findOneAndUpdate({ _id: id }, data)
       if (!result) {
@@ -140,13 +153,16 @@ const userFromRaw = (result: UserType): User => ({
   phone: result.phone as PhoneNumber,
   language: result.language as UserLanguage,
   twoFA: result.twoFA as TwoFAForUser,
+  email: result.email as Email,
   contacts: result.contacts.reduce(
     (res: UserContact[], contact: ContactObjectForUser): UserContact[] => {
-      if (contact.id) {
+      const contactId = contact.lightningAddress || contact.id
+      if (contactId) {
         res.push({
-          id: contact.id as Username,
-          username: contact.id as Username,
-          alias: (contact.name || contact.id) as ContactAlias,
+          id: contactId as ContactId,
+          username: contact.lightningAddress ? undefined : (contact.id as Username),
+          lightningAddress: contact.lightningAddress as LightningAddress | undefined,
+          alias: (contact.name || contactId) as ContactAlias,
           transactionsCount: contact.transactionsCount,
         })
       }

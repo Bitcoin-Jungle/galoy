@@ -177,6 +177,14 @@ const UserSchema = new Schema<UserType>({
       partialFilterExpression: { username: { $type: "string" } },
     },
   },
+  email: {
+    type: String,
+    index: {
+      unique: true,
+      collation: { locale: "en", strength: 2 },
+      partialFilterExpression: { email: { $type: "string" } },
+    },
+  },
   deviceToken: {
     type: [String],
     default: [],
@@ -209,6 +217,10 @@ const UserSchema = new Schema<UserType>({
     type: [
       {
         id: {
+          type: String,
+          collation: { locale: "en", strength: 2 },
+        },
+        lightningAddress: {
           type: String,
           collation: { locale: "en", strength: 2 },
         },
@@ -490,3 +502,44 @@ const accountApiKeySchema = new Schema({
 
 accountApiKeySchema.index({ accountId: 1, label: 1 }, { unique: true })
 export const AccountApiKey = mongoose.model("AccountApiKey", accountApiKeySchema)
+
+const boltCardSchema = new Schema({
+  _id: { type: String, required: true },
+  walletId: { type: String, required: true, index: true },
+  uid: { type: String, required: true, unique: true, index: true },
+  cardName: { type: String, required: true },
+  k0: { type: String, required: true },
+  k1: { type: String, required: true },
+  k2: { type: String, required: true },
+  k3: { type: String, required: true },
+  k4: { type: String, required: true },
+  prevK0: { type: String },
+  prevK1: { type: String },
+  prevK2: { type: String },
+  prevK3: { type: String },
+  prevK4: { type: String },
+  counter: { type: Number, required: true, default: 0 },
+  enabled: { type: Boolean, required: true, default: true },
+  txLimit: { type: Number, required: true },
+  dailyLimit: { type: Number, required: true },
+  otp: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+})
+
+export const BoltCard = mongoose.model("BoltCard", boltCardSchema)
+
+const cardUsageSchema = new Schema({
+  _id: { type: String, required: true },
+  cardId: { type: String, required: true, index: true },
+  ip: { type: String },
+  userAgent: { type: String },
+  spent: { type: Number, required: true },
+  oldCounter: { type: Number, required: true },
+  newCounter: { type: Number, required: true },
+  amount: { type: Number, required: true },
+  createdAt: { type: Date, default: Date.now },
+})
+
+cardUsageSchema.index({ cardId: 1, createdAt: -1 })
+export const CardUsage = mongoose.model("CardUsage", cardUsageSchema)

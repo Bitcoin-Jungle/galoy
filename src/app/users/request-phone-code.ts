@@ -83,7 +83,7 @@ export const requestPhoneCode = async ({
 
   const code = String(randomIntFromInterval(100000, 999999)) as PhoneCode
   const galoyInstanceName = getGaloyInstanceName()
-  const body = `*${code}* is your verification code. For your security, do not share this code.`
+  const body = `${code} is your verification code. For your security, do not share this code.`
 
   const result = await PhoneCodesRepository().persistNew({ phone, code })
   if (result instanceof Error) return result

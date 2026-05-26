@@ -17,7 +17,7 @@ const ContactAlias = new GT.Scalar({
 })
 
 function validContactAliasValue(value) {
-  if (value.match(/^[\p{Alpha}][\p{Alpha} -]{3,}/u)) {
+  if (value.match(/^[\p{Alpha}][\p{Alpha}' -]{3,}/u)) {
     return value
   }
   return new UserInputError("Invalid value for ContactAlias")

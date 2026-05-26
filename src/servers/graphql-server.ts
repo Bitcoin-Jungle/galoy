@@ -31,6 +31,7 @@ import {
   addAttributesToCurrentSpan,
   ENDUSER_ALIAS,
 } from "@services/tracing"
+import { UserStatus } from "@core/user"
 
 const graphqlLogger = baseLogger.child({
   module: "graphql",
@@ -107,6 +108,10 @@ const sessionContext = ({ token, ips, body, apiKey, apiSecret }) => {
       }
 
       addAttributesToCurrentSpan({ [ENDUSER_ALIAS]: domainUser?.username })
+
+      if (user && user.status === UserStatus.Locked) {
+        throw new ApolloError("Account is locked", "ACCOUNT_LOCKED")
+      }
 
       return {
         logger,

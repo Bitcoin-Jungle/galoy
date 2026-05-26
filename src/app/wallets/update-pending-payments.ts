@@ -6,6 +6,17 @@ import { LndService } from "@services/lnd"
 import { LockService } from "@services/lock"
 import { reimburseFee } from "@app/wallets/reimburse-fee"
 
+// When LND reports a payment as `failed` it may still be retrying in the
+// background and can flip to `settled` a few seconds later.  To avoid
+// mistakenly voiding the user's debit (and losing money) we only treat the
+// failure as final after a small grace period.
+//
+// NOTE: The value should be comfortably longer than the send-payment timeout
+// (30 s) but short enough that funds don't stay reserved for long in genuine
+// failures.  Five minutes strikes a reasonable balance and matches behaviour
+// in other wallets.
+const FAILED_PAYMENT_GRACE_MS = 5 * 60 * 1000 // 5 minutes
+
 export const updatePendingPayments = async ({
   walletId,
   logger,
@@ -75,7 +86,11 @@ const updatePendingPayment = async ({
   }
   const { status, roundedUpFee } = lnPaymentLookup
 
-  if (status === PaymentStatus.Settled || status === PaymentStatus.Failed) {
+  if (
+    status === PaymentStatus.Settled ||
+    (status === PaymentStatus.Failed &&
+      Date.now() - lnPaymentLookup.createdAt.getTime() > FAILED_PAYMENT_GRACE_MS)
+  ) {
     const ledgerService = LedgerService()
     return LockService().lockPaymentHash({ paymentHash, logger, lock }, async () => {
       const recorded = await ledgerService.isLnTxRecorded(paymentHash)
@@ -115,11 +130,18 @@ const updatePendingPayment = async ({
         })
       }
 
-      return revertTransaction({
-        paymentLiabilityTx,
-        lnPaymentLookup,
-        logger: paymentLogger,
-      })
+      // Status is still `failed` after the grace delay → treat as final and
+      // revert the journal.
+      if (status === PaymentStatus.Failed) {
+        return revertTransaction({
+          paymentLiabilityTx,
+          lnPaymentLookup,
+          logger: paymentLogger,
+        })
+      }
+
+      /* istanbul ignore next */
+      return
     })
   }
 }

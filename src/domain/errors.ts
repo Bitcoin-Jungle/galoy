@@ -30,6 +30,7 @@ export class ValidationError extends DomainError {}
 export class InvalidSatoshiAmount extends ValidationError {}
 export class SatoshiAmountRequiredError extends ValidationError {}
 export class InvalidUsername extends ValidationError {}
+export class InvalidLightningAddress extends ValidationError {}
 export class InvalidPublicWalletId extends ValidationError {}
 export class InvalidLedgerTransactionId extends ValidationError {}
 export class AlreadyPaidError extends ValidationError {}
@@ -41,6 +42,7 @@ export class NoContactForUsernameError extends ValidationError {}
 export class LnPaymentRequestNonZeroAmountRequiredError extends ValidationError {}
 export class LnPaymentRequestZeroAmountRequiredError extends ValidationError {}
 export class NoWalletExistsForUserError extends ValidationError {}
+export class EmailAlreadyExistsError extends ValidationError {}
 
 export class LimitsExceededError extends ValidationError {}
 export class WithdrawalLimitsExceededError extends LimitsExceededError {}

@@ -371,13 +371,25 @@ export const onchainLnds = getLnds({ type: "onchain" })
 export const nodesPubKey = offchainLnds.map((item) => item.pubkey)
 
 export const getLndFromPubkey = ({ pubkey }: { pubkey: string }) => {
-  const lnds = getLnds({ active: true })
-  const lnd = _.filter(lnds, { pubkey })
-  if (!lnd) {
-    throw new LndOfflineError(`lnd with pubkey:${pubkey} is offline`)
-  } else {
-    return lnd[0]
+  // First try to find an active LND with the specified pubkey
+  const activeLnds = getLnds({ active: true })
+  const activeLnd = _.filter(activeLnds, { pubkey })
+  
+  if (activeLnd.length > 0) {
+    return activeLnd[0]
   }
+  
+  // If no active LND with the specified pubkey is found,
+  // check if the LND exists but is marked as inactive
+  const allLnds = getLnds()
+  const inactiveLnd = _.filter(allLnds, { pubkey })
+  
+  if (inactiveLnd.length > 0) {
+    throw new LndOfflineError(`lnd with pubkey:${pubkey} is offline`)
+  }
+  
+  // If no LND with the specified pubkey exists at all
+  throw new LndOfflineError(`no lnd found with pubkey:${pubkey}`)
 }
 
 export const validate = async ({

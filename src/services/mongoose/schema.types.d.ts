@@ -39,6 +39,7 @@ type CurrencyObjectForUser = {
 
 type ContactObjectForUser = {
   id?: string
+  lightningAddress?: string
   name?: string
   transactionsCount: number
 }
@@ -55,6 +56,7 @@ interface UserType {
   username?: string
   phone: string
   role: string
+  email?: string
 
   level?: number // ?: enum [1, 2]
   status?: string // ?: enum ["active", "locked"]
