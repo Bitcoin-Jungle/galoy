@@ -2,6 +2,7 @@ import readline from "readline"
 
 import { setupMongoConnectionSecondary } from "@services/mongodb"
 import { User } from "@services/mongoose/schema"
+import { caseInsensitiveRegex } from "@services/mongoose/users"
 import { sendBulkNotification } from "@services/notifications/notification"
 import { baseLogger } from "@services/logger"
 
@@ -18,6 +19,7 @@ import { baseLogger } from "@services/logger"
 //       --body "Maintenance tonight at 10pm UTC" \
 //       --level 1 \
 //       --country US \
+//       --active-since-days 30 \
 //       [--dry-run] [--yes]
 //
 // Without --yes the script prints the matched count and waits for a typed CONFIRM.
@@ -27,6 +29,8 @@ type Args = {
   body?: string
   level?: number
   country?: string
+  activeSinceDays?: number
+  username?: string
   dryRun: boolean
   yes: boolean
 }
@@ -42,6 +46,8 @@ const parseArgs = (): Args => {
       case "--body": out.body = next(); break
       case "--level": out.level = parseInt(next(), 10); break
       case "--country": out.country = next(); break
+      case "--active-since-days": out.activeSinceDays = parseInt(next(), 10); break
+      case "--username": out.username = next(); break
       case "--dry-run": out.dryRun = true; break
       case "--yes": out.yes = true; break
       default:
@@ -79,6 +85,13 @@ const main = async () => {
   if (args.country) {
     query["twilio.countryCode"] = args.country
   }
+  if (typeof args.activeSinceDays === "number" && !Number.isNaN(args.activeSinceDays)) {
+    const cutoff = new Date(Date.now() - args.activeSinceDays * 24 * 60 * 60 * 1000)
+    query["lastIPs.lastConnection"] = { $gte: cutoff }
+  }
+  if (args.username) {
+    query.username = caseInsensitiveRegex(args.username)
+  }
 
   const users = await User.find(query, { deviceToken: 1 }).lean()
   const tokens = users.flatMap((u) => u.deviceToken || [])
@@ -86,7 +99,9 @@ const main = async () => {
   console.log("---")
   console.log("title:    ", args.title)
   console.log("body:     ", args.body || "(none)")
-  console.log("filter:   ", JSON.stringify(query))
+  console.log("filter:   ", JSON.stringify(query, (_k, v) =>
+    v instanceof RegExp ? v.toString() : v,
+  ))
   console.log("users:    ", users.length)
   console.log("tokens:   ", tokens.length)
   console.log("dry-run:  ", args.dryRun)

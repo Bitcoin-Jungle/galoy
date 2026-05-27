@@ -31,7 +31,10 @@ const password = process.env.MONGODB_PASSWORD
 const address = process.env.MONGODB_ADDRESS ?? "mongodb"
 const db = process.env.MONGODB_DATABASE ?? "galoy"
 
-const path = `mongodb://${user}:${password}@${address}/${db}`
+const authSource = process.env.MONGODB_AUTH_SOURCE
+const path = `mongodb://${user}:${password}@${address}/${db}${
+  authSource ? `?authSource=${authSource}` : ""
+}`
 
 export const setupMongoConnection = async () => {
   try {
