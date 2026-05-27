@@ -24,6 +24,7 @@ export const LedgerTransactionType = {
   UserRebalance: "user_rebalance", // buy/sell btc in the user wallet
   ToColdStorage: "to_cold_storage",
   ToHotWallet: "to_hot_wallet",
+  CustodyFee: "custody_fee",
 } as const
 
 export const ExtendedLedgerTransactionType = {

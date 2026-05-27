@@ -543,3 +543,44 @@ const cardUsageSchema = new Schema({
 
 cardUsageSchema.index({ cardId: 1, createdAt: -1 })
 export const CardUsage = mongoose.model("CardUsage", cardUsageSchema)
+
+const highBalanceNoticeSchema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+  thresholdSats: { type: Number, required: true },
+  rateMonthly: { type: Number, required: true },
+  noticeSentAt: { type: Date, required: true },
+  graceEndsAt: { type: Date, required: true },
+  feeEligibleSince: { type: Date, default: null },
+  resolvedAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now },
+})
+highBalanceNoticeSchema.index({ userId: 1, resolvedAt: 1 })
+export const HighBalanceNotice = mongoose.model("HighBalanceNotice", highBalanceNoticeSchema)
+
+const dailyBalanceSnapshotSchema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  date: { type: String, required: true },
+  balanceSats: { type: Number, required: true },
+  feeEligible: { type: Boolean, required: true },
+  createdAt: { type: Date, default: Date.now },
+})
+dailyBalanceSnapshotSchema.index({ userId: 1, date: 1 }, { unique: true })
+export const DailyBalanceSnapshot = mongoose.model(
+  "DailyBalanceSnapshot",
+  dailyBalanceSnapshotSchema,
+)
+
+const custodyFeeChargeSchema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+  period: { type: String, required: true },
+  thresholdSats: { type: Number, required: true },
+  rateMonthly: { type: Number, required: true },
+  daysCounted: { type: Number, required: true },
+  avgExcessSats: { type: Number, required: true },
+  feeCalculated: { type: Number, required: true },
+  feeCharged: { type: Number, required: true },
+  ledgerEntryId: { type: Schema.Types.ObjectId, default: null },
+  chargedAt: { type: Date, default: Date.now },
+})
+custodyFeeChargeSchema.index({ userId: 1, period: 1 }, { unique: true })
+export const CustodyFeeCharge = mongoose.model("CustodyFeeCharge", custodyFeeChargeSchema)
