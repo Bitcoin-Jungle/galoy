@@ -77,3 +77,58 @@ export const sendNotification = async ({
 
   // FIXME: any as a workaround to https://github.com/Microsoft/TypeScript/issues/15300
 }
+
+// FCM caps sendMulticast at 500 tokens per request.
+const FCM_MULTICAST_BATCH_SIZE = 500
+
+export const sendBulkNotification = async ({
+  tokens,
+  title,
+  body,
+  data,
+  logger,
+}: {
+  tokens: string[]
+  title: string
+  body?: string
+  data?: Record<string, string | number | boolean>
+  logger: Logger
+}): Promise<{ successCount: number; failureCount: number }> => {
+  const cleaned = tokens.filter((t) => t && t !== "test")
+  if (cleaned.length === 0) {
+    return { successCount: 0, failureCount: 0 }
+  }
+
+  const notification: { title: string; body?: string } = { title }
+  if (body) notification.body = body
+
+  const messageData = data ? _.mapValues(data, (v) => String(v)) : undefined
+
+  let successCount = 0
+  let failureCount = 0
+
+  for (let i = 0; i < cleaned.length; i += FCM_MULTICAST_BATCH_SIZE) {
+    const batch = cleaned.slice(i, i + FCM_MULTICAST_BATCH_SIZE)
+    try {
+      const response = await admin.messaging().sendMulticast({
+        tokens: batch,
+        notification,
+        ...(messageData ? { data: messageData } : {}),
+      })
+      successCount += response.successCount
+      failureCount += response.failureCount
+
+      if (response.failureCount > 0) {
+        const failedTokens = response.responses
+          .map((r, idx) => (r.success ? null : { token: batch[idx], error: r.error?.message }))
+          .filter((x) => x !== null)
+        logger.warn({ failedTokens, title }, "bulk notification: some tokens failed")
+      }
+    } catch (err) {
+      failureCount += batch.length
+      logger.error({ err, title, batchSize: batch.length }, "bulk notification batch failed")
+    }
+  }
+
+  return { successCount, failureCount }
+}
