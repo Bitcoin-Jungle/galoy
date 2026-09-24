@@ -5,6 +5,12 @@ interface IPhoneCodesRepository {
     age: Seconds
   }) => Promise<true | RepositoryError>
 
+  consumeNewerThan: (arg: {
+    phone: PhoneNumber
+    code: PhoneCode
+    age: Seconds
+  }) => Promise<true | RepositoryError>
+
   persistNew: (arg: {
     phone: PhoneNumber
     code: PhoneCode

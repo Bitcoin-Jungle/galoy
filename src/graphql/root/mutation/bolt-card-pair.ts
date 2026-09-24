@@ -38,21 +38,12 @@ const BoltCardPairMutation = GT.Field({
     try {
       const { otp, baseUrl } = input
       
-      // Find the card by OTP
-      const card = await boltCardService.findCardByOtp(otp)
+      // Atomically redeem the OTP (one-time use, expires after a short window)
+      const card = await boltCardService.consumeCardOtp(otp)
       
       if (!card) {
         return {
           errors: [{ message: "Invalid OTP or card not found" }],
-        }
-      }
-      
-      // Clear the OTP to ensure one-time use
-      const updatedCard = await boltCardService.clearCardOtp(card.id)
-      
-      if (!updatedCard) {
-        return {
-          errors: [{ message: "Failed to clear OTP" }],
         }
       }
       

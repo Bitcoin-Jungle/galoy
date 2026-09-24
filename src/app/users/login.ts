@@ -143,6 +143,6 @@ const isCodeValid = async ({
   if (validTestCode) {
     return true
   } else {
-    return PhoneCodesRepository().existNewerThan({ code, phone, age })
+    return PhoneCodesRepository().consumeNewerThan({ code, phone, age })
   }
 }

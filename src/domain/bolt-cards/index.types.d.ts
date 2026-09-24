@@ -80,6 +80,9 @@ export interface BoltCardsRepository {
   findByWalletId(walletId: WalletId): Promise<BoltCard[]>
   findByUid(uid: string): Promise<BoltCard | null>
   findByOtp(otp: string): Promise<BoltCard | null>
+  consumeOtp(otp: string, maxAgeMs: number): Promise<BoltCard | null>
+  setOtp(id: BoltCardId, otp: string): Promise<BoltCard | null>
+  advanceCounter(id: BoltCardId, newCounter: number): Promise<BoltCard | null>
   save(input: CreateBoltCardInput): Promise<BoltCard>
   update(input: UpdateBoltCardInput): Promise<BoltCard | null>
   
@@ -88,4 +91,5 @@ export interface BoltCardsRepository {
   getDailyCardUsage(cardId: BoltCardId): Promise<CardUsage[]>
   recordCardUsage(usage: Omit<CardUsage, "id" | "createdAt">): Promise<CardUsage>
   updateCardUsage(id: CardUsageId, input: UpdateCardUsageInput): Promise<CardUsage | null>
+  markCardUsageSpent(id: CardUsageId, amount: number): Promise<CardUsage | null>
 }

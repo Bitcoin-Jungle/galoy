@@ -523,6 +523,7 @@ const boltCardSchema = new Schema({
   txLimit: { type: Number, required: true },
   dailyLimit: { type: Number, required: true },
   otp: { type: String },
+  otpCreatedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 })

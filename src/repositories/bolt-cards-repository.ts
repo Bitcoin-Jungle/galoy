@@ -249,11 +249,73 @@ export const BoltCardsRepositoryImpl = (
     return toCardUsage(document)
   }
 
+  // Only advances the counter if it is strictly greater than the stored one, so
+  // concurrent or replayed taps with the same counter cannot both succeed
+  const advanceCounter = async (
+    id: BoltCardId,
+    newCounter: number,
+  ): Promise<BoltCard | null> => {
+    const document = await boltCardModel.findOneAndUpdate(
+      { _id: id, counter: { $lt: newCounter } },
+      { counter: newCounter, updatedAt: new Date() },
+      { new: true }
+    ).lean()
+
+    if (!document) return null
+    return toBoltCard(document)
+  }
+
+  // Only marks the usage as spent if it was not already spent, so a single
+  // withdraw request (k1) can only be claimed once
+  const markCardUsageSpent = async (
+    id: CardUsageId,
+    amount: number,
+  ): Promise<CardUsage | null> => {
+    const document = await cardUsageModel.findOneAndUpdate(
+      { _id: id, spent: { $ne: true } },
+      { amount, spent: true, spentAt: new Date(), updatedAt: new Date() },
+      { new: true }
+    ).lean()
+
+    if (!document) return null
+    return toCardUsage(document)
+  }
+
+  const setOtp = async (id: BoltCardId, otp: string): Promise<BoltCard | null> => {
+    const document = await boltCardModel.findOneAndUpdate(
+      { _id: id },
+      { otp, otpCreatedAt: new Date(), updatedAt: new Date() },
+      { new: true }
+    ).lean()
+
+    if (!document) return null
+    return toBoltCard(document)
+  }
+
+  // Atomically finds a card by an unexpired OTP and clears it, so an OTP can
+  // only be redeemed once and stops working after maxAgeMs
+  const consumeOtp = async (otp: string, maxAgeMs: number): Promise<BoltCard | null> => {
+    if (!otp) return null
+
+    const document = await boltCardModel.findOneAndUpdate(
+      { otp, otpCreatedAt: { $gte: new Date(Date.now() - maxAgeMs) } },
+      { otp: null, otpCreatedAt: null, updatedAt: new Date() },
+      { new: false }
+    ).lean()
+
+    if (!document) return null
+    return toBoltCard(document)
+  }
+
   return {
     findById,
     findByWalletId,
     findByUid,
     findByOtp,
+    consumeOtp,
+    setOtp,
+    advanceCounter,
+    markCardUsageSpent,
     save,
     update,
     findCardUsagesByCardId,

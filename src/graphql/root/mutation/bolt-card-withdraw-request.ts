@@ -3,6 +3,7 @@ import { boltCardService } from "@services/index"
 import { InvalidBoltCardError } from "@domain/bolt-cards/bolt-card"
 import { decrypt_sun, get_sun_mac } from "@domain/bolt-cards/crypto"
 import IError from "@graphql/types/abstract/error"
+import { timingSafeEqual } from "crypto"
 
 // Define input type
 const BoltCardWithdrawRequestInput = new GT.Input({
@@ -92,35 +93,18 @@ const BoltCardWithdrawRequestMutation = GT.Field({
           // Check if the UIDs match
           if(cardUidHex !== storedUidHex) {
             return {
-              errors: [{ message: `Invalid card uid: expected ${storedUidHex}, got ${cardUidHex}` }],
+              errors: [{ message: "Invalid authentication parameters" }],
             }
           }
 
-          // Verify the MAC
+          // Verify the MAC: the full 8-byte SUN MAC must match, compared in constant time
           const expectedMac = get_sun_mac(cardUid, counter, k2Buffer)
-          const expectedMacHex = expectedMac.toString('hex').toUpperCase()
-          const providedMacHex = c.toUpperCase()
-          
-          // The MAC comparison might need to be adjusted based on the length
-          // The specification might return a different length MAC than what we receive
-          if (expectedMacHex !== providedMacHex) {
-            // Try comparing just the first part of the MAC if lengths differ
-            if (expectedMacHex.length > providedMacHex.length) {
-              if (expectedMacHex.substring(0, providedMacHex.length) !== providedMacHex) {
-                return {
-                  errors: [{ message: "Invalid authentication parameters" }],
-                }
-              }
-            } else if (providedMacHex.length > expectedMacHex.length) {
-              if (providedMacHex.substring(0, expectedMacHex.length) !== expectedMacHex) {
-                return {
-                  errors: [{ message: "Invalid authentication parameters" }],
-                }
-              }
-            } else {
-              return {
-                errors: [{ message: "Invalid authentication parameters" }],
-              }
+          if (
+            cBuffer.length !== expectedMac.length ||
+            !timingSafeEqual(cBuffer, expectedMac)
+          ) {
+            return {
+              errors: [{ message: "Invalid authentication parameters" }],
             }
           }
           
@@ -141,8 +125,13 @@ const BoltCardWithdrawRequestMutation = GT.Field({
             }
           }
           
-          // Update the counter
-          await boltCardService.updateCardCounter(card.id, counterInt)
+          // Atomically advance the counter; fails if this tap was already used
+          const advanced = await boltCardService.updateCardCounter(card.id, counterInt)
+          if (!advanced) {
+            return {
+              errors: [{ message: "This link has already been used" }],
+            }
+          }
           
           // Create a hit record
           const userAgent = "Bolt Card Withdraw Request"

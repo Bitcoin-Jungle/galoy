@@ -19,6 +19,7 @@ describe("BoltCardsRepository", () => {
     find: jest.fn(() => ({ lean: mockLean })),
     create: jest.fn(),
     aggregate: jest.fn(),
+    findOneAndUpdate: jest.fn(() => ({ lean: mockLean })),
   }
 
   // Create repository with mocked models
@@ -188,6 +189,66 @@ describe("BoltCardsRepository", () => {
       const result = await repository.getDailyCardUsage("bolt-card:123")
       
       expect(result).toEqual([])
+    })
+  })
+
+  describe("advanceCounter", () => {
+    it("only updates when the stored counter is lower", async () => {
+      mockLean.mockResolvedValue({ ...validCard, counter: 5 })
+
+      const result = await repository.advanceCounter("bolt-card:123", 5)
+
+      expect(mockBoltCardModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: "bolt-card:123", counter: { $lt: 5 } },
+        expect.objectContaining({ counter: 5 }),
+        { new: true },
+      )
+      expect(result?.counter).toBe(5)
+    })
+
+    it("returns null when the counter was already used", async () => {
+      mockLean.mockResolvedValue(null)
+
+      const result = await repository.advanceCounter("bolt-card:123", 1)
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe("markCardUsageSpent", () => {
+    it("only marks usages that are not already spent", async () => {
+      mockLean.mockResolvedValue(null)
+
+      const result = await repository.markCardUsageSpent("bolt-card-usage:1", 100)
+
+      expect(mockCardUsageModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: "bolt-card-usage:1", spent: { $ne: true } },
+        expect.objectContaining({ amount: 100, spent: true }),
+        { new: true },
+      )
+      expect(result).toBeNull()
+    })
+  })
+
+  describe("consumeOtp", () => {
+    it("atomically clears an unexpired otp", async () => {
+      mockLean.mockResolvedValue({ ...validCard, otp: "abc" })
+
+      const result = await repository.consumeOtp("abc", 60000)
+
+      expect(mockBoltCardModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { otp: "abc", otpCreatedAt: { $gte: expect.any(Date) } },
+        expect.objectContaining({ otp: null, otpCreatedAt: null }),
+        { new: false },
+      )
+      expect(result?.id).toBe("bolt-card:123")
+    })
+
+    it("rejects an empty otp without querying", async () => {
+      const result = await repository.consumeOtp("", 60000)
+
+      expect(mockBoltCardModel.findOneAndUpdate).not.toHaveBeenCalled()
+      expect(result).toBeNull()
     })
   })
 })

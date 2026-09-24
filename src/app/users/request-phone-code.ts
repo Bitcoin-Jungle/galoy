@@ -4,7 +4,8 @@ import {
   getRequestPhoneCodePerPhoneLimits,
   getRequestPhoneCodePerPhoneMinIntervalLimits,
 } from "@config/app"
-import { randomIntFromInterval } from "@core/utils"
+import { randomInt } from "crypto"
+
 import { UnknownPhoneProviderServiceError } from "@domain/phone-provider"
 import { RateLimitPrefix } from "@domain/rate-limit"
 import { RateLimiterExceededError } from "@domain/rate-limit/errors"
@@ -81,7 +82,7 @@ export const requestPhoneCode = async ({
     return true
   }
 
-  const code = String(randomIntFromInterval(100000, 999999)) as PhoneCode
+  const code = String(randomInt(100000, 1000000)) as PhoneCode
   const galoyInstanceName = getGaloyInstanceName()
   const body = `${code} is your verification code. For your security, do not share this code.`
 

@@ -19,6 +19,9 @@ import {
 } from "../../domain/bolt-cards/bolt-card"
 import crypto from 'crypto'
 
+// Pairing OTPs hand out the card keys, so they must be short-lived
+export const BOLT_CARD_OTP_VALIDITY_MS = 15 * 60 * 1000
+
 export class BoltCardService {
   constructor(private readonly boltCardsRepository: BoltCardsRepository) {}
 
@@ -75,21 +78,8 @@ export class BoltCardService {
   }
 
   async updateCardCounter(cardId: BoltCardId, newCounter: number): Promise<BoltCard | null> {
-    const card = await this.boltCardsRepository.findById(cardId)
-    if (!card) {
-      throw new InvalidBoltCardError(`Card with ID ${cardId} not found`)
-    }
-
-    if (newCounter <= card.counter) {
-      throw new InvalidBoltCardError(
-        `New counter value must be greater than current counter (${card.counter})`,
-      )
-    }
-
-    return this.boltCardsRepository.update({
-      id: cardId,
-      counter: newCounter,
-    } as any) // Using 'any' here as counter isn't in UpdateBoltCardInput
+    // Atomic compare-and-set: returns null if the stored counter is already >= newCounter
+    return this.boltCardsRepository.advanceCounter(cardId, newCounter)
   }
 
   // New methods for bolt card withdrawal functionality
@@ -112,11 +102,8 @@ export class BoltCardService {
    * Mark a card usage record as spent with a specific amount
    */
   async spendCardUsage(usageId: CardUsageId, amount: number): Promise<CardUsage | null> {
-    return this.boltCardsRepository.updateCardUsage(usageId, {
-      amount,
-      spent: true,
-      spentAt: new Date(),
-    })
+    // Atomic: returns null if the usage was already spent
+    return this.boltCardsRepository.markCardUsageSpent(usageId, amount)
   }
 
   /**
@@ -173,11 +160,8 @@ export class BoltCardService {
     // Generate a random 16-byte OTP
     const otp = crypto.randomBytes(16).toString('hex')
 
-    // Update the card with the new OTP
-    const updated = await this.boltCardsRepository.update({
-      id: cardId,
-      otp,
-    } as any) // Using 'any' as otp isn't in UpdateBoltCardInput
+    // Update the card with the new OTP (and the time it was issued, for expiry)
+    const updated = await this.boltCardsRepository.setOtp(cardId, otp)
 
     return updated ? otp : null
   }
@@ -189,6 +173,14 @@ export class BoltCardService {
    */
   async findCardByOtp(otp: string): Promise<BoltCard | null> {
     return this.boltCardsRepository.findByOtp(otp)
+  }
+
+  /**
+   * Atomically redeem an OTP: returns the card and clears the OTP, or null if
+   * the OTP is unknown, already used, or older than BOLT_CARD_OTP_VALIDITY_MS
+   */
+  async consumeCardOtp(otp: string): Promise<BoltCard | null> {
+    return this.boltCardsRepository.consumeOtp(otp, BOLT_CARD_OTP_VALIDITY_MS)
   }
 
   /**

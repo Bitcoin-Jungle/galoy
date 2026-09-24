@@ -95,8 +95,13 @@ const BoltCardWithdrawCallbackMutation = GT.Field({
         }
       }
       
-      // Mark the hit as spent with the correct amount
-      await boltCardService.spendCardUsage(hit.id, satAmount)
+      // Atomically mark the hit as spent; fails if a concurrent callback already claimed it
+      const spent = await boltCardService.spendCardUsage(hit.id, satAmount)
+      if (!spent) {
+        return {
+          errors: [{ message: "Payment already claimed" }],
+        }
+      }
       
       try {
         // Find the user associated with this wallet
